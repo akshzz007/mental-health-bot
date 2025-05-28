@@ -551,7 +551,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.9.0"></script>
   <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8.4/dist/teachablemachine-image.min.js"></script>
   <script>
-    const URL = "./";
+    const URL = window.location.pathname.includes("mental-health-bot") ? "/mental-health-bot/" : "./";
     let model, webcam, maxPredictions;
     let detected = false;
     let consistentEmotion = null;
@@ -589,21 +589,27 @@
     const DETECTION_DURATION = 3000;
     const DISPLAY_DURATION = 1500;
 
+    // Ensure chatbot is hidden initially
+    chatbotContainer.style.display = "none";
+
     // Preload model and webcam on page load
     async function init() {
       try {
         const modelURL = URL + "model.json";
         const metadataURL = URL + "metadata.json";
+        console.log("Loading model from:", modelURL);
         model = await tmImage.load(modelURL, metadataURL);
         maxPredictions = model.getTotalClasses();
+        console.log("Model loaded successfully");
         webcam = new tmImage.Webcam(350, 350, true);
         await webcam.setup();
+        console.log("Webcam setup successful");
         webcamContainer.appendChild(webcam.canvas);
         webcamInitialized = true;
         console.log("Model and webcam initialized successfully.");
       } catch (err) {
         console.error("Failed to initialize model or webcam:", err);
-        notify.textContent = "Failed to load model or webcam. Please check camera permissions.";
+        notify.textContent = "Failed to load model or webcam. Please check camera permissions and ensure model files are available.";
         notify.style.display = "block";
         webcamInitialized = false;
       }
@@ -622,7 +628,9 @@
         emotionText.style.display = "block";
         notify.style.display = "none";
         spinner.style.display = "block";
+        // Explicitly hide chatbot
         chatbotContainer.style.display = "none";
+        console.log("Chatbot hidden on startDetection");
         dashboardBtn.style.display = "none";
         botDashboardBtn.style.display = "none";
         restartBtn.style.display = "none";
@@ -646,66 +654,73 @@
     }
 
     async function predict() {
-      const prediction = await model.predict(webcam.canvas);
-      predictionBuffer.push(prediction);
-      if (predictionBuffer.length > BUFFER_SIZE) predictionBuffer.shift();
+      try {
+        const prediction = await model.predict(webcam.canvas);
+        predictionBuffer.push(prediction);
+        if (predictionBuffer.length > BUFFER_SIZE) predictionBuffer.shift();
 
-      let avgPred = {};
-      model.getClassLabels().forEach(label => avgPred[label] = 0);
-      predictionBuffer.forEach(pred => {
-        for (let i = 0; i < pred.length; i++) {
-          const className = pred[i].className;
-          avgPred[className] += pred[i].probability;
-        }
-      });
-
-      for (let key in avgPred) {
-        avgPred[key] /= predictionBuffer.length;
-      }
-
-      let topEmotion = "";
-      let topProb = 0;
-      for (let key in avgPred) {
-        if (avgPred[key] > topProb) {
-          topEmotion = key.toLowerCase();
-          topProb = avgPred[key];
-        }
-      }
-
-      if (topProb > THRESHOLD) {
-        if (consistentEmotion === topEmotion) {
-          if (!detectionStartTime) {
-            detectionStartTime = Date.now();
+        let avgPred = {};
+        model.getClassLabels().forEach(label => avgPred[label] = 0);
+        predictionBuffer.forEach(pred => {
+          for (let i = 0; i < pred.length; i++) {
+            const className = pred[i].className;
+            avgPred[className] += pred[i].probability;
           }
-          const elapsed = Date.now() - detectionStartTime;
-          emotionText.textContent = `Emotion Detected: ${capitalize(topEmotion)} (${(topProb * 100).toFixed(1)}%)`;
-          applyEmotionGlow(topEmotion);
-          if (!detected && elapsed >= DETECTION_DURATION) {
-            detected = true;
-            notify.style.display = "none";
-            spinner.style.display = "none";
-            dashboardBtn.style.display = "block";
-            restartBtn.style.display = "block";
-            resultScreen.style.display = "flex";
-            resultText.textContent = `Emotion: ${capitalize(topEmotion)} (${(topProb * 100).toFixed(1)}%)`;
-            webcamContainer.style.display = "none";
-            emotionText.style.display = "none";
-            setTimeout(() => {
-              resultScreen.style.display = "none";
-              showChatbot();
-            }, DISPLAY_DURATION);
+        });
+
+        for (let key in avgPred) {
+          avgPred[key] /= predictionBuffer.length;
+        }
+
+        let topEmotion = "";
+        let topProb = 0;
+        for (let key in avgPred) {
+          if (avgPred[key] > topProb) {
+            topEmotion = key.toLowerCase();
+            topProb = avgPred[key];
+          }
+        }
+
+        if (topProb > THRESHOLD) {
+          if (consistentEmotion === topEmotion) {
+            if (!detectionStartTime) {
+              detectionStartTime = Date.now();
+            }
+            const elapsed = Date.now() - detectionStartTime;
+            emotionText.textContent = `Emotion Detected: ${capitalize(topEmotion)} (${(topProb * 100).toFixed(1)}%)`;
+            applyEmotionGlow(topEmotion);
+            if (!detected && elapsed >= DETECTION_DURATION) {
+              detected = true;
+              notify.style.display = "none";
+              spinner.style.display = "none";
+              dashboardBtn.style.display = "block";
+              restartBtn.style.display = "block";
+              resultScreen.style.display = "flex";
+              resultText.textContent = `Emotion: ${capitalize(topEmotion)} (${(topProb * 100).toFixed(1)}%)`;
+              webcamContainer.style.display = "none";
+              emotionText.style.display = "none";
+              setTimeout(() => {
+                console.log("Detection complete, showing chatbot");
+                resultScreen.style.display = "none";
+                showChatbot();
+              }, DISPLAY_DURATION);
+            }
+          } else {
+            consistentEmotion = topEmotion;
+            detectionStartTime = Date.now();
+            emotionText.textContent = `Emotion Detected: ${capitalize(topEmotion)} (${(topProb * 100).toFixed(1)}%)`;
+            applyEmotionGlow(topEmotion);
           }
         } else {
-          consistentEmotion = topEmotion;
-          detectionStartTime = Date.now();
-          emotionText.textContent = `Emotion Detected: ${capitalize(topEmotion)} (${(topProb * 100).toFixed(1)}%)`;
-          applyEmotionGlow(topEmotion);
+          emotionText.textContent = "Detecting Emotion...";
+          removeEmotionGlow();
+          consistentEmotion = null;
+          detectionStartTime = null;
         }
-      } else {
-        emotionText.textContent = "Detecting Emotion...";
-        removeEmotionGlow();
-        consistentEmotion = null;
-        detectionStartTime = null;
+      } catch (err) {
+        console.error("Prediction failed:", err);
+        notify.textContent = "Failed to predict emotion. Please try again.";
+        notify.style.display = "block";
       }
     }
 
@@ -731,6 +746,7 @@
       spinner.style.display = "none";
       resultScreen.style.display = "none";
       chatbotContainer.style.display = "flex";
+      console.log("Chatbot displayed after detection");
       header.style.display = "none";
       dashboardBtn.style.display = "none";
       botDashboardBtn.style.display = "block";
@@ -853,7 +869,6 @@
       dashboardBtn.style.display = "none";
       botDashboardBtn.style.display = isBotView ? "none" : "block";
       createOrbAnimation();
-      // Push dashboard state to history
       history.pushState({ page: 'dashboard', isBotView: isBotView }, "Dashboard", "#dashboard");
     }
 
@@ -865,24 +880,23 @@
     function startNow() {
       introPage.style.display = "none";
       header.style.display = "block";
+      // Ensure chatbot is hidden when starting
+      chatbotContainer.style.display = "none";
+      console.log("Starting detection, chatbot hidden");
       startDetection();
       createHeartAnimation();
-      // Push initial state to history
       history.pushState({ page: 'webcam' }, "Webcam Detection", "#webcam");
     }
 
     function openGame(url) {
-      // Store the current state before navigating
       const state = { page: 'game', returnTo: 'dashboard', isBotView: isBotView };
       history.pushState(state, "Game", `#game-${url}`);
-      window.location.href = url; // Navigate to the game page in the same tab
+      window.location.href = url;
     }
 
-    // Handle back button navigation
     window.addEventListener('popstate', (event) => {
       const state = event.state;
       if (state && state.page === 'dashboard') {
-        // Reopen the dashboard
         dashboardMenu.classList.add("open");
         dashboardMenu.setAttribute("aria-hidden", "false");
         dashboardBtn.style.display = "none";
@@ -899,12 +913,11 @@
           spinner.style.display = "none";
         }
       } else if (state && state.page === 'webcam') {
-        // Return to webcam detection
         introPage.style.display = "none";
         header.style.display = "block";
+        chatbotContainer.style.display = "none";
         startDetection();
       } else {
-        // Default to intro page if no state
         introPage.style.display = "flex";
         header.style.display = "none";
         webcamContainer.style.display = "none";
@@ -920,14 +933,11 @@
       dashboardMenu.classList.remove("open");
       dashboardMenu.setAttribute("aria-hidden", "true");
       createHeartAnimation();
-      // Return to the appropriate view based on isBotView
       if (isBotView) {
-        // Show the chatbot view
         showChatbot();
         botDashboardBtn.style.display = "block";
         dashboardBtn.style.display = "none";
       } else {
-        // Show the webcam detection view
         webcamContainer.style.display = "flex";
         emotionText.style.display = "block";
         notify.style.display = "none";
@@ -1009,10 +1019,8 @@
     window.openDashboard = openDashboard;
     window.hideChatbot = hideChatbot;
 
-    // Initialize model and webcam on page load
     init();
 
-    // Check initial URL hash to restore state
     window.addEventListener('load', () => {
       if (window.location.hash === '#dashboard') {
         toggleDashboard(isBotView);
