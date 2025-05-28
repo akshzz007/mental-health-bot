@@ -489,10 +489,10 @@
   <header><span>🌿 Mental Health Bot 🤖</span></header>
   <div id="webcam-container"></div>
   <div class="spinner" id="spinner"></div>
-  <div id="emotionText">Detecting Emotion...</div>
-  <div id="notify"></div>
+  <div id="emotionText">Emotion detection is on the way</div>
+  <div id="notify">Please ensure the camera remains open</div>
   <div id="resultScreen">
-    <p id="resultText">Emotion Detected: Happy</p>
+    <p id="resultText"></p>
   </div>
   <button id="dashboardBtn" aria-label="Open Dashboard"><i class="fas fa-gamepad"></i> Dashboard</button>
   <button id="restartBtn" aria-label="Restart Emotion Detection"><i class="fas fa-redo"></i> Restart</button>
@@ -548,8 +548,8 @@
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.9.0"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8.4/dist/teachablemachine-image.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
   <script>
     const URL = window.location.pathname.includes("mental-health-bot") ? "/mental-health-bot/" : "./";
     let model, webcam, maxPredictions;
@@ -591,6 +591,14 @@
 
     // Ensure chatbot is hidden initially
     chatbotContainer.style.display = "none";
+    resultScreen.style.display = "none";
+
+    // Check for secure context
+    if (!window.isSecureContext) {
+      notify.textContent = "This page must be served over HTTPS to access the webcam. Please use a secure connection.";
+      notify.style.display = "block";
+      startNowBtn.disabled = true;
+    }
 
     // Preload model and webcam on page load
     async function init() {
@@ -601,15 +609,24 @@
         model = await tmImage.load(modelURL, metadataURL);
         maxPredictions = model.getTotalClasses();
         console.log("Model loaded successfully");
-        webcam = new tmImage.Webcam(350, 350, true);
-        await webcam.setup();
-        console.log("Webcam setup successful");
-        webcamContainer.appendChild(webcam.canvas);
-        webcamInitialized = true;
-        console.log("Model and webcam initialized successfully.");
+        
+        // Initialize webcam
+        try {
+          webcam = new tmImage.Webcam(350, 350, true);
+          await webcam.setup();
+          console.log("Webcam setup successful");
+          webcamContainer.appendChild(webcam.canvas);
+          webcamInitialized = true;
+          console.log("Model and webcam initialized successfully.");
+        } catch (webcamErr) {
+          console.error("Webcam setup failed:", webcamErr);
+          notify.textContent = "Failed to access webcam. Please ensure camera permissions are granted and no other app is using the camera.";
+          notify.style.display = "block";
+          webcamInitialized = false;
+        }
       } catch (err) {
-        console.error("Failed to initialize model or webcam:", err);
-        notify.textContent = "Failed to load model or webcam. Please check camera permissions and ensure model files are available.";
+        console.error("Failed to initialize model:", err);
+        notify.textContent = "Failed to load emotion detection model. Please check if model files are available.";
         notify.style.display = "block";
         webcamInitialized = false;
       }
@@ -617,30 +634,33 @@
 
     async function startDetection() {
       if (!webcamInitialized || !webcam) {
-        notify.textContent = "Webcam not ready. Please ensure camera permissions are granted.";
+        notify.textContent = "Webcam not ready. Please ensure camera permissions are granted and try again.";
         notify.style.display = "block";
         return;
       }
       try {
         await webcam.play();
+        console.log("Webcam started playing");
         detected = false;
         predictionBuffer = [];
+        emotionText.textContent = "Emotion detection is on the way";
         emotionText.style.display = "block";
-        notify.style.display = "none";
+        notify.textContent = "Please ensure the camera remains open";
+        notify.style.display = "block";
         spinner.style.display = "block";
-        // Explicitly hide chatbot
+        // Explicitly hide chatbot and result screen
         chatbotContainer.style.display = "none";
+        resultScreen.style.display = "none";
         console.log("Chatbot hidden on startDetection");
         dashboardBtn.style.display = "none";
         botDashboardBtn.style.display = "none";
         restartBtn.style.display = "none";
-        resultScreen.style.display = "none";
         webcamContainer.style.display = "flex";
         header.style.display = "block";
         window.requestAnimationFrame(loop);
       } catch (err) {
         console.error("Failed to start webcam:", err);
-        notify.textContent = "Failed to start webcam. Please check camera permissions.";
+        notify.textContent = "Failed to start webcam stream. Error: " + err.message;
         notify.style.display = "block";
       }
     }
@@ -712,7 +732,8 @@
             applyEmotionGlow(topEmotion);
           }
         } else {
-          emotionText.textContent = "Detecting Emotion...";
+          emotionText.textContent = "Emotion detection is on the way";
+          notify.textContent = "Please ensure the camera remains open";
           removeEmotionGlow();
           consistentEmotion = null;
           detectionStartTime = null;
@@ -751,7 +772,7 @@
       dashboardBtn.style.display = "none";
       botDashboardBtn.style.display = "block";
       restartBtn.style.display = "none";
-      webcam.pause();
+      if (webcam) webcam.pause();
       addRetakeButton();
       chatbotFrame.addEventListener('error', () => {
         console.error('Failed to load Botpress chatbot. Please check the URL or network.');
@@ -826,7 +847,9 @@
       chatbotContainer.style.display = "none";
       webcamContainer.style.display = "flex";
       emotionText.style.display = "block";
-      notify.style.display = "none";
+      emotionText.textContent = "Emotion detection is on the way";
+      notify.style.display = "block";
+      notify.textContent = "Please ensure the camera remains open";
       spinner.style.display = "block";
       resultScreen.style.display = "none";
       detected = false;
@@ -880,8 +903,9 @@
     function startNow() {
       introPage.style.display = "none";
       header.style.display = "block";
-      // Ensure chatbot is hidden when starting
+      // Ensure chatbot and result screen are hidden when starting
       chatbotContainer.style.display = "none";
+      resultScreen.style.display = "none";
       console.log("Starting detection, chatbot hidden");
       startDetection();
       createHeartAnimation();
@@ -916,12 +940,14 @@
         introPage.style.display = "none";
         header.style.display = "block";
         chatbotContainer.style.display = "none";
+        resultScreen.style.display = "none";
         startDetection();
       } else {
         introPage.style.display = "flex";
         header.style.display = "none";
         webcamContainer.style.display = "none";
         chatbotContainer.style.display = "none";
+        resultScreen.style.display = "none";
         dashboardMenu.classList.remove("open");
       }
     });
@@ -940,9 +966,11 @@
       } else {
         webcamContainer.style.display = "flex";
         emotionText.style.display = "block";
-        notify.style.display = "none";
+        emotionText.textContent = "Emotion detection is on the way";
+        notify.style.display = "block";
+        notify.textContent = "Please ensure the camera remains open";
         spinner.style.display = detected ? "none" : "block";
-        resultScreen.style.display = detected ? "flex" : "none";
+        resultScreen.style.display = "none";
         header.style.display = "block";
         chatbotContainer.style.display = "none";
         dashboardBtn.style.display = detected ? "block" : "none";
