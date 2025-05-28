@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fun AI Quiz</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+  <style>
+    body {
+      background: linear-gradient(to bottom, #f9a8d4, #c4b5fd);
+      font-family: 'Arial', sans-serif;
+      color: #1e293b;
+      overflow-y: auto;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .header-container {
+      background: linear-gradient(45deg, #67e8f9, #f9a8d4);
+      padding: 1rem;
+      border-radius: 16px;
+      margin: 1rem;
+      width: fit-content;
+      box-shadow: 0 0 20px rgba(103, 232, 249, 0.5);
+      animation: pulse 2s infinite ease-in-out;
+    }
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+    .ai-orb {
+      position: fixed;
+      width: 15px;
+      height: 15px;
+      background: radial-gradient(circle, #67e8f9, #f9a8d4);
+      border-radius: 50%;
+      animation: float 3s ease-in-out forwards;
+      pointer-events: none;
+      z-index: 50;
+    }
+    .chibi-heart {
+      position: fixed;
+      width: 20px;
+      height: 20px;
+      background: url('https://img.icons8.com/emoji/48/000000/heart-suit.png');
+      background-size: cover;
+      animation: float 2s ease-in-out forwards;
+      pointer-events: none;
+      z-index: 50;
+    }
+    @keyframes float {
+      0% { transform: translateY(0); opacity: 1; }
+      100% { transform: translateY(-100px); opacity: 0; }
+    }
+    .chibi-robot {
+      width: 40px;
+      height: 40px;
+      background: url('https://img.icons8.com/emoji/48/000000/robot.png');
+      background-size: cover;
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      animation: bounce 2s infinite ease-in-out;
+    }
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    .ai-btn {
+      background: linear-gradient(45deg, #f9a8d4, #67e8f9);
+      color: white;
+      padding: 8px 16px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      width: 100%;
+      margin: 0.5rem 0;
+    }
+    .ai-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 8px 20px rgba(103, 232, 249, 0.5);
+    }
+    .ai-btn:focus {
+      outline: 3px solid #67e8f9;
+      outline-offset: 2px;
+    }
+    .quiz-container {
+      background: rgba(255, 255, 255, 0.7);
+      border: 2px solid #f9a8d4;
+      border-radius: 16px;
+      padding: 1rem;
+      margin: 1rem;
+      max-width: 90%;
+      box-shadow: 0 4px 20px rgba(249, 168, 212, 0.4);
+      text-align: center;
+    }
+    .speech-bubble {
+      position: relative;
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      max-width: 80%;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .speech-bubble::after {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-width: 10px;
+      border-style: solid;
+      border-color: #ffffff transparent transparent transparent;
+    }
+    .feedback-text {
+      color: #1e293b;
+      font-weight: bold;
+      margin-bottom: 1rem;
+    }
+    .results-container {
+      background: rgba(255, 255, 255, 0.7);
+      border-radius: 12px;
+      padding: 1rem;
+      max-width: 90%;
+      margin: 1rem;
+    }
+    @media (max-width: 768px) {
+      .header-container {
+        padding: 0.5rem;
+      }
+      h1 {
+        font-size: 1.5rem;
+      }
+      .quiz-container {
+        padding: 0.5rem;
+      }
+      .speech-bubble {
+        font-size: 0.9rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="header-container">
+    <h1 class="text-2xl sm:text-3xl font-bold text-white">🎉 Fun AI Quiz 🤖</h1>
+  </div>
+  <div class="flex flex-col sm:flex-row gap-4 mb-4">
+    <button id="backBtn" class="ai-btn" aria-label="Back to dashboard">Back</button>
+  </div>
+  <div id="quizArea" class="quiz-container">
+    <div class="speech-bubble" id="questionText">Yo, ready to test your knowledge with some fun questions?</div>
+    <p id="feedbackText" class="feedback-text hidden"></p>
+    <div id="optionsArea" class="flex flex-col"></div>
+    <button id="startBtn" class="ai-btn" aria-label="Start quiz">Let’s Roll!</button>
+  </div>
+  <div id="resultsArea" class="results-container hidden">
+    <p class="font-bold text-cyan-600 text-lg">Your Score</p>
+    <p id="resultText" class="mb-4"></p>
+    <p class="font-bold text-cyan-600">Keep the Fun Going</p>
+    <ul id="suggestionsList" class="list-disc list-inside text-left mb-4"></ul>
+    <button id="retakeBtn" class="ai-btn" aria-label="Retake quiz">Play Again</button>
+  </div>
+  <div class="chibi-robot"></div>
+
+  <script>
+    const backBtn = document.getElementById('backBtn');
+    const startBtn = document.getElementById('startBtn');
+    const quizArea = document.getElementById('quizArea');
+    const resultsArea = document.getElementById('resultsArea');
+    const questionText = document.getElementById('questionText');
+    const feedbackText = document.getElementById('feedbackText');
+    const optionsArea = document.getElementById('optionsArea');
+    const resultText = document.getElementById('resultText');
+    const suggestionsList = document.getElementById('suggestionsList');
+    const retakeBtn = document.getElementById('retakeBtn');
+
+    const questionPool = [
+      { text: "What’s the fastest animal on land?", options: ["Cheetah", "Lion", "Horse", "Kangaroo"], correct: "Cheetah" },
+      { text: "Which fruit is yellow and curved?", options: ["Apple", "Banana", "Orange", "Grape"], correct: "Banana" },
+      { text: "Who’s Spider-Man’s real name?", options: ["Tony Stark", "Peter Parker", "Bruce Wayne", "Clark Kent"], correct: "Peter Parker" },
+      { text: "What’s the largest planet?", options: ["Mars", "Jupiter", "Earth", "Venus"], correct: "Jupiter" },
+      { text: "Which bird is known for dancing?", options: ["Penguin", "Peacock", "Sparrow", "Eagle"], correct: "Peacock" },
+      { text: "What color is an emerald?", options: ["Red", "Blue", "Green", "Yellow"], correct: "Green" },
+      { text: "Which animal is called ‘King of the Jungle’?", options: ["Tiger", "Lion", "Elephant", "Gorilla"], correct: "Lion" },
+      { text: "What’s the main ingredient in pizza?", options: ["Rice", "Bread", "Noodles", "Dough"], correct: "Dough" },
+      { text: "Which superhero has a hammer called Mjolnir?", options: ["Hulk", "Thor", "Iron Man", "Captain America"], correct: "Thor" },
+      { text: "What’s the capital of France?", options: ["Paris", "London", "Berlin", "Rome"], correct: "Paris" },
+      { text: "Which instrument has 88 keys?", options: ["Guitar", "Piano", "Violin", "Drums"], correct: "Piano" },
+      { text: "What’s the tallest animal?", options: ["Elephant", "Giraffe", "Rhino", "Hippo"], correct: "Giraffe" },
+      { text: "Which movie features Simba?", options: ["Aladdin", "The Lion King", "Frozen", "Moana"], correct: "The Lion King" },
+      { text: "What’s the smell of rain like?", options: ["Sweet", "Sour", "Petrichor", "Spicy"], correct: "Petrichor" },
+      { text: "Which fish is Nemo?", options: ["Clownfish", "Goldfish", "Shark", "Tuna"], correct: "Clownfish" },
+      { text: "What’s the smallest continent?", options: ["Asia", "Africa", "Australia", "Europe"], correct: "Australia" },
+      { text: "Which drink is made from beans?", options: ["Tea", "Coffee", "Juice", "Soda"], correct: "Coffee" },
+      { text: "Who painted the Mona Lisa?", options: ["Van Gogh", "Picasso", "Da Vinci", "Monet"], correct: "Da Vinci" },
+      { text: "What’s the freezing point of water in Celsius?", options: ["0", "100", "50", "-10"], correct: "0" },
+      { text: "Which animal is known for its black and white stripes?", options: ["Zebra", "Tiger", "Leopard", "Panda"], correct: "Zebra" },
+      { text: "What’s the main color of a ruby?", options: ["Blue", "Red", "Green", "Purple"], correct: "Red" },
+      { text: "Which planet is known as the Red Planet?", options: ["Mars", "Venus", "Mercury", "Saturn"], correct: "Mars" },
+      { text: "What’s the name of Harry Potter’s owl?", options: ["Hedwig", "Fawkes", "Crookshanks", "Scabbers"], correct: "Hedwig" },
+      { text: "Which food is Italy famous for?", options: ["Sushi", "Pizza", "Tacos", "Curry"], correct: "Pizza" },
+      { text: "What’s the largest ocean?", options: ["Atlantic", "Indian", "Pacific", "Arctic"], correct: "Pacific" },
+      { text: "Which element is a diamond made of?", options: ["Carbon", "Gold", "Silver", "Iron"], correct: "Carbon" },
+      { text: "What’s the capital of Japan?", options: ["Tokyo", "Seoul", "Beijing", "Bangkok"], correct: "Tokyo" },
+      { text: "Which animal is the symbol of Australia?", options: ["Kangaroo", "Koala", "Emu", "All of these"], correct: "All of these" },
+      { text: "What’s the name of the famous clock in London?", options: ["Big Ben", "Clock Tower", "Westminster", "London Eye"], correct: "Big Ben" },
+      { text: "Which fruit is known as the king of fruits?", options: ["Mango", "Apple", "Banana", "Durian"], correct: "Durian" },
+      { text: "Who wrote the Harry Potter series?", options: ["J.K. Rowling", "C.S. Lewis", "Roald Dahl", "Rick Riordan"], correct: "J.K. Rowling" },
+      { text: "What’s the chemical symbol for gold?", options: ["Au", "Ag", "Fe", "Cu"], correct: "Au" },
+      { text: "Which country is known for the Eiffel Tower?", options: ["France", "Italy", "Spain", "Germany"], correct: "France" },
+      { text: "What’s the main ingredient in guacamole?", options: ["Avocado", "Tomato", "Onion", "Lime"], correct: "Avocado" },
+      { text: "Which superhero is known as the Dark Knight?", options: ["Superman", "Batman", "Spider-Man", "Iron Man"], correct: "Batman" },
+      { text: "What’s the longest river?", options: ["Nile", "Amazon", "Yangtze", "Mississippi"], correct: "Amazon" },
+      { text: "Which animal is known for its long neck?", options: ["Giraffe", "Elephant", "Zebra", "Lion"], correct: "Giraffe" },
+      { text: "What’s the capital of Brazil?", options: ["Rio de Janeiro", "Sao Paulo", "Brasilia", "Salvador"], correct: "Brasilia" },
+      { text: "Which fruit is a symbol of hospitality?", options: ["Pineapple", "Apple", "Orange", "Mango"], correct: "Pineapple" },
+      { text: "Who is the Greek god of war?", options: ["Ares", "Zeus", "Apollo", "Hades"], correct: "Ares" },
+      { text: "What’s the smallest planet in our solar system?", options: ["Mercury", "Venus", "Mars", "Pluto"], correct: "Mercury" },
+      { text: "Which country is famous for Bollywood?", options: ["India", "Pakistan", "China", "Japan"], correct: "India" },
+      { text: "What’s the main ingredient in sushi?", options: ["Rice", "Noodles", "Bread", "Pasta"], correct: "Rice" },
+      { text: "Which animal is known for its pouch?", options: ["Kangaroo", "Koala", "Wombat", "Platypus"], correct: "Kangaroo" },
+      { text: "What’s the capital of Canada?", options: ["Toronto", "Vancouver", "Ottawa", "Montreal"], correct: "Ottawa" },
+      { text: "Which instrument is known as the king of instruments?", options: ["Piano", "Organ", "Violin", "Trumpet"], correct: "Organ" },
+      { text: "What’s the name of the famous wall in China?", options: ["Great Wall", "Wall of China", "Dragon Wall", "Jade Wall"], correct: "Great Wall" },
+      { text: "Which fruit is known for its spiky shell?", options: ["Durian", "Pineapple", "Mango", "Lychee"], correct: "Pineapple" },
+      { text: "Who is the creator of Star Wars?", options: ["George Lucas", "Steven Spielberg", "James Cameron", "J.J. Abrams"], correct: "George Lucas" },
+      { text: "What’s the chemical symbol for oxygen?", options: ["O", "Ox", "O2", "Og"], correct: "O" },
+      { text: "Which country is known for the Taj Mahal?", options: ["India", "Pakistan", "Nepal", "Bangladesh"], correct: "India" },
+      { text: "What’s the main ingredient in chocolate?", options: ["Cocoa", "Sugar", "Milk", "Flour"], correct: "Cocoa" },
+      { text: "Which superhero has a shield with a star?", options: ["Captain America", "Iron Man", "Thor", "Hulk"], correct: "Captain America" },
+      { text: "What’s the highest mountain in the world?", options: ["Everest", "K2", "Kangchenjunga", "Lhotse"], correct: "Everest" },
+      { text: "Which animal is known for its humps?", options: ["Camel", "Horse", "Cow", "Goat"], correct: "Camel" },
+      { text: "What’s the capital of Australia?", options: ["Sydney", "Melbourne", "Canberra", "Brisbane"], correct: "Canberra" },
+      { text: "Which fruit is known for its red seeds?", options: ["Pomegranate", "Apple", "Orange", "Grape"], correct: "Pomegranate" },
+      { text: "Who is the Greek goddess of love?", options: ["Aphrodite", "Athena", "Hera", "Artemis"], correct: "Aphrodite" },
+      { text: "What’s the closest planet to the Sun?", options: ["Mercury", "Venus", "Earth", "Mars"], correct: "Mercury" },
+      { text: "Which country is famous for samba?", options: ["Brazil", "Argentina", "Mexico", "Cuba"], correct: "Brazil" },
+      { text: "What’s the main ingredient in hummus?", options: ["Chickpeas", "Lentils", "Beans", "Peas"], correct: "Chickpeas" },
+      { text: "Which animal is known for its shell?", options: ["Turtle", "Crab", "Shrimp", "Lobster"], correct: "Turtle" },
+      { text: "What’s the capital of Italy?", options: ["Rome", "Milan", "Venice", "Florence"], correct: "Rome" },
+      { text: "Which instrument is known for its keys?", options: ["Piano", "Guitar", "Drums", "Flute"], correct: "Piano" },
+      { text: "What’s the name of the famous bridge in San Francisco?", options: ["Golden Gate", "Bay Bridge", "Brooklyn Bridge", "London Bridge"], correct: "Golden Gate" },
+      { text: "Which fruit is known for its fuzzy skin?", options: ["Peach", "Apple", "Pear", "Plum"], correct: "Peach" },
+      { text: "Who directed the movie Titanic?", options: ["James Cameron", "Steven Spielberg", "Christopher Nolan", "Quentin Tarantino"], correct: "James Cameron" },
+      { text: "What’s the chemical symbol for hydrogen?", options: ["H", "Hy", "Hg", "He"], correct: "H" },
+      { text: "Which country is known for the Pyramids?", options: ["Egypt", "Mexico", "India", "China"], correct: "Egypt" },
+      { text: "What’s the main ingredient in pasta?", options: ["Flour", "Rice", "Corn", "Potato"], correct: "Flour" },
+      { text: "Which superhero is known as the Man of Steel?", options: ["Superman", "Batman", "Spider-Man", "Iron Man"], correct: "Superman" },
+      { text: "What’s the deepest ocean trench?", options: ["Mariana Trench", "Tonga Trench", "Philippine Trench", "Kermadec Trench"], correct: "Mariana Trench" },
+      { text: "Which animal is known for its spots?", options: ["Leopard", "Tiger", "Lion", "Bear"], correct: "Leopard" },
+      { text: "What’s the capital of South Africa?", options: ["Cape Town", "Pretoria", "Johannesburg", "Durban"], correct: "Pretoria" },
+      { text: "Which fruit is known for its segments?", options: ["Orange", "Apple", "Banana", "Mango"], correct: "Orange" },
+      { text: "Who is the Norse god of thunder?", options: ["Thor", "Odin", "Loki", "Freyr"], correct: "Thor" },
+      { text: "What’s the brightest planet in the night sky?", options: ["Venus", "Mars", "Jupiter", "Saturn"], correct: "Venus" },
+      { text: "Which country is famous for tango?", options: ["Argentina", "Brazil", "Cuba", "Mexico"], correct: "Argentina" },
+      { text: "What’s the main ingredient in kimchi?", options: ["Cabbage", "Carrot", "Cucumber", "Radish"], correct: "Cabbage" },
+      { text: "Which animal is known for its wings?", options: ["Bat", "Penguin", "Ostrich", "Emu"], correct: "Bat" },
+      { text: "What’s the capital of Germany?", options: ["Berlin", "Munich", "Hamburg", "Frankfurt"], correct: "Berlin" },
+      { text: "Which instrument is known for its reeds?", options: ["Clarinet", "Trumpet", "Violin", "Harp"], correct: "Clarinet" }
+    ];
+
+    let currentQuestion = -1;
+    let score = 0;
+    let selectedQuestions = [];
+    let usedIndices = [];
+
+    function createOrbAnimation() {
+      for (let i = 0; i < 5; i++) {
+        let orb = document.createElement('div');
+        orb.className = 'ai-orb';
+        orb.style.left = Math.random() * window.innerWidth + 'px';
+        orb.style.top = window.innerHeight - 100 + 'px';
+        document.body.appendChild(orb);
+        setTimeout(() => orb.remove(), 3000);
+      }
+    }
+
+    function createHeartAnimation() {
+      for (let i = 0; i < 3; i++) {
+        let heart = document.createElement('div');
+        heart.className = 'chibi-heart';
+        heart.style.left = Math.random() * window.innerWidth + 'px';
+        heart.style.top = window.innerHeight - 100 + 'px';
+        document.body.appendChild(heart);
+        setTimeout(() => heart.remove(), 2000);
+      }
+    }
+
+    function shuffleArray(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+
+    function selectQuestions() {
+      usedIndices = [];
+      selectedQuestions = [];
+      let indices = Array.from({ length: questionPool.length }, (_, i) => i);
+      shuffleArray(indices);
+      for (let i = 0; i < 10; i++) {
+        usedIndices.push(indices[i]);
+        selectedQuestions.push(questionPool[indices[i]]);
+      }
+    }
+
+    function showQuestion() {
+      currentQuestion++;
+      feedbackText.classList.add('hidden');
+      if (currentQuestion >= selectedQuestions.length) {
+        showResults();
+        return;
+      }
+      startBtn.classList.add('hidden');
+      questionText.textContent = `Q${currentQuestion + 1}: ${selectedQuestions[currentQuestion].text}`;
+      optionsArea.innerHTML = '';
+      const shuffledOptions = shuffleArray([...selectedQuestions[currentQuestion].options]);
+      shuffledOptions.forEach(option => {
+        const btn = document.createElement('button');
+        btn.className = 'ai-btn';
+        btn.textContent = option;
+        btn.setAttribute('aria-label', `Select ${option}`);
+        btn.addEventListener('click', () => {
+          const isCorrect = option === selectedQuestions[currentQuestion].correct;
+          score += isCorrect ? 1 : 0;
+          feedbackText.textContent = isCorrect ? 'Nice one! You got it!' : `Oops, it’s ${selectedQuestions[currentQuestion].correct}!`;
+          feedbackText.classList.remove('hidden');
+          createHeartAnimation();
+          setTimeout(showQuestion, 1000);
+        });
+        btn.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            btn.click();
+          }
+        });
+        optionsArea.appendChild(btn);
+      });
+    }
+
+    function showResults() {
+      quizArea.classList.add('hidden');
+      resultsArea.classList.remove('hidden');
+      let message = '';
+      const suggestions = [
+        `Vibe with some tunes on <a href="./music.html" class="text-cyan-600 underline">Akshzz Music</a>!`,
+        `Chat with Akshra’s Bot on <a href="./index.html#chatArea" class="text-cyan-600 underline">the chatbot</a>!`,
+        `Have fun and <a href="./music.html" class="text-cyan-600 underline">play games</a>!`
+      ];
+
+      if (score <= 3) {
+        message = `You scored ${score}/10! Nice try, champ! Keep quizzing to rule the game!`;
+      } else if (score <= 7) {
+        message = `You scored ${score}/10! Solid job, you’re killing it! Ready for more?`;
+      } else {
+        message = `You scored ${score}/10! Yo, you’re a quiz master! Absolutely smashed it!`;
+      }
+
+      resultText.textContent = message;
+      suggestionsList.innerHTML = suggestions.map(s => `<li>${s}</li>`).join('');
+
+      localStorage.setItem('funQuizResults', JSON.stringify({
+        score,
+        timestamp: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })
+      }));
+    }
+
+    function goBack() {
+      createHeartAnimation();
+      // Navigate back to index.html with the dashboard hash
+      window.location.href = './index.html#dashboard';
+    }
+
+    startBtn.addEventListener('click', () => {
+      selectQuestions();
+      showQuestion();
+      createOrbAnimation();
+    });
+
+    backBtn.addEventListener('click', goBack);
+
+    retakeBtn.addEventListener('click', () => {
+      currentQuestion = -1;
+      score = 0;
+      quizArea.classList.remove('hidden');
+      resultsArea.classList.add('hidden');
+      questionText.textContent = 'Yo, ready to test your knowledge with some fun questions?';
+      feedbackText.classList.add('hidden');
+      optionsArea.innerHTML = '';
+      startBtn.classList.remove('hidden');
+      selectQuestions();
+      createOrbAnimation();
+    });
+
+    document.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          btn.click();
+        }
+      });
+    });
+
+    createOrbAnimation();
+  </script>
+</body>
+</html>

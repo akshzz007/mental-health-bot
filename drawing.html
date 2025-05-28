@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Air Drawing</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      overflow: hidden;
+      background: radial-gradient(circle, #111, #000);
+      font-family: 'Segoe UI', sans-serif;
+    }
+    video, canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+    }
+    video {
+      object-fit: contain;
+      background: black;
+      z-index: 1;
+      transform: scaleX(-1);
+    }
+    #drawingCanvas {
+      z-index: 2;
+    }
+    #overlayCanvas {
+      z-index: 3;
+    }
+    #controls {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      user-select: none;
+    }
+    button {
+      background: #1a1a1a;
+      color: white;
+      border: 2px solid white;
+      border-radius: 8px;
+      padding: 10px 16px;
+      font-size: 14px;
+      cursor: pointer;
+      box-shadow: 0 0 5px #0ff;
+      transition: transform 0.2s, box-shadow 0.3s;
+    }
+    button:hover {
+      transform: scale(1.08);
+      box-shadow: 0 0 12px #0ff;
+    }
+    .color-palette {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .color-btn {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      border: 2px solid white;
+      cursor: pointer;
+      box-shadow: 0 0 5px #fff;
+    }
+    .color-btn.selected {
+      box-shadow: 0 0 12px #0ff;
+      border-color: #0ff;
+    }
+    .chibi-heart {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background: url('https://img.icons8.com/emoji/48/000000/heart-suit.png');
+      background-size: cover;
+      animation: float 2s ease-in-out forwards;
+      pointer-events: none;
+      z-index: 10;
+    }
+    @keyframes float {
+      0% { transform: translateY(0); opacity: 1; }
+      100% { transform: translateY(-100px); opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+  <video id="video" autoplay playsinline></video>
+  <canvas id="drawingCanvas"></canvas>
+  <canvas id="overlayCanvas"></canvas>
+
+  <div id="controls">
+    <button onclick="goBack()" aria-label="Back to dashboard">⬅️ Back</button>
+    <button onclick="clearCanvas()" aria-label="Clear canvas">🧹 Clear</button>
+    <button onclick="saveImage()" aria-label="Save drawing">💾 Save</button>
+    <button onclick="activateEraser()" aria-label="Activate eraser">✏️ Eraser</button>
+    <div class="color-palette" role="group" aria-label="Color palette">
+      <div class="color-btn selected" style="background: yellow;" onclick="setColor('yellow', this)" aria-label="Select yellow color"></div>
+      <div class="color-btn" style="background: red;" onclick="setColor('red', this)" aria-label="Select red color"></div>
+      <div class="color-btn" style="background: blue;" onclick="setColor('blue', this)" aria-label="Select blue color"></div>
+      <div class="color-btn" style="background: green;" onclick="setColor('green', this)" aria-label="Select green color"></div>
+      <div class="color-btn" style="background: white; border-color: black;" onclick="setColor('white', this)" aria-label="Select white color"></div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+
+  <script>
+    const video = document.getElementById('video');
+    const drawingCanvas = document.getElementById('drawingCanvas');
+    const overlayCanvas = document.getElementById('overlayCanvas');
+    const drawCtx = drawingCanvas.getContext('2d');
+    const overlayCtx = overlayCanvas.getContext('2d');
+
+    let prevX = null, prevY = null;
+    let selectedColor = 'yellow';
+    let currentColor = selectedColor;
+    let eraserMode = false;
+    let smoothedX = null, smoothedY = null;
+    const smoothingFactor = 0.5;
+    let smoothedLandmarks = null;
+    let videoWidth = 1280;
+    let videoHeight = 720;
+
+    function resizeCanvases() {
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = drawingCanvas.width;
+      tempCanvas.height = drawingCanvas.height;
+      const tempCtx = tempCanvas.getContext('2d');
+      tempCtx.drawImage(drawingCanvas, 0, 0);
+
+      const aspectRatio = videoWidth / videoHeight || 16 / 9;
+      let width = document.documentElement.clientWidth;
+      let height = document.documentElement.clientHeight;
+      if (width / height > aspectRatio) {
+        width = height * aspectRatio;
+      } else {
+        height = width / aspectRatio;
+      }
+      drawingCanvas.width = width;
+      drawingCanvas.height = height;
+      overlayCanvas.width = width;
+      overlayCanvas.height = height;
+      video.style.width = `${width}px`;
+      video.style.height = `${height}px`;
+      video.style.left = `${(document.documentElement.clientWidth - width) / 2}px`;
+      video.style.top = `${(document.documentElement.clientHeight - height) / 2}px`;
+      drawingCanvas.style.width = `${width}px`;
+      drawingCanvas.style.height = `${height}px`;
+      drawingCanvas.style.left = `${(document.documentElement.clientWidth - width) / 2}px`;
+      drawingCanvas.style.top = `${(document.documentElement.clientHeight - height) / 2}px`;
+      overlayCanvas.style.width = `${width}px`;
+      overlayCanvas.style.height = `${height}px`;
+      overlayCanvas.style.left = `${(document.documentElement.clientWidth - width) / 2}px`;
+      overlayCanvas.style.top = `${(document.documentElement.clientHeight - height) / 2}px`;
+      drawCtx.lineCap = 'round';
+      drawCtx.lineJoin = 'round';
+      drawCtx.strokeStyle = currentColor;
+      drawCtx.lineWidth = eraserMode ? 60 : 5;
+      drawCtx.globalAlpha = eraserMode ? 1.0 : 0.6;
+      drawCtx.shadowColor = eraserMode ? 'transparent' : currentColor;
+      drawCtx.shadowBlur = eraserMode ? 0 : 6;
+
+      drawCtx.drawImage(tempCanvas, 0, 0, width, height);
+    }
+
+    function createHeartAnimation() {
+      for (let i = 0; i < 3; i++) {
+        let heart = document.createElement('div');
+        heart.className = 'chibi-heart';
+        heart.style.left = Math.random() * document.documentElement.clientWidth + 'px';
+        heart.style.top = document.documentElement.clientHeight - 100 + 'px';
+        document.body.appendChild(heart);
+        setTimeout(() => heart.remove(), 2000);
+      }
+    }
+
+    function goBack() {
+      createHeartAnimation();
+      // Navigate back to index.html with the dashboard hash
+      window.location.href = './index.html#dashboard';
+    }
+
+    function setColor(color, elem) {
+      eraserMode = false;
+      currentColor = color;
+      selectedColor = color;
+      drawCtx.strokeStyle = currentColor;
+      drawCtx.shadowColor = eraserMode ? 'transparent' : currentColor;
+      document.querySelectorAll('.color-btn').forEach(btn => btn.classList.remove('selected'));
+      if (elem) elem.classList.add('selected');
+    }
+
+    function activateEraser() {
+      eraserMode = true;
+      currentColor = 'white';
+      drawCtx.strokeStyle = currentColor;
+      drawCtx.shadowColor = 'transparent';
+      document.querySelectorAll('.color-btn').forEach(btn => btn.classList.remove('selected'));
+    }
+
+    function clearCanvas() {
+      drawCtx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+    }
+
+    function saveImage() {
+      const link = document.createElement('a');
+      link.download = 'drawing.png';
+      link.href = drawingCanvas.toDataURL();
+      link.click();
+    }
+
+    function eraseAt(x, y) {
+      const eraseRadius = 30;
+      drawCtx.clearRect(x - eraseRadius, y - eraseRadius, 2 * eraseRadius, 2 * eraseRadius);
+    }
+
+    function drawLine(x, y) {
+      if (prevX !== null && prevY !== null) {
+        drawCtx.beginPath();
+        drawCtx.strokeStyle = currentColor;
+        drawCtx.lineWidth = eraserMode ? 60 : 5;
+        drawCtx.moveTo(prevX, prevY);
+        drawCtx.lineTo(x, y);
+        drawCtx.stroke();
+      }
+      prevX = x;
+      prevY = y;
+    }
+
+    function fingersUp(landmarks) {
+      let fingers = [];
+      fingers[0] = landmarks[4].x < landmarks[3].x ? 1 : 0; // Thumb
+      fingers[1] = landmarks[8].y < landmarks[6].y ? 1 : 0; // Index
+      fingers[2] = landmarks[12].y < landmarks[10].y ? 1 : 0; // Middle
+      fingers[3] = landmarks[16].y < landmarks[14].y ? 1 : 0; // Ring
+      fingers[4] = landmarks[20].y < landmarks[18].y ? 1 : 0; // Pinky
+      return fingers;
+    }
+
+    const hands = new Hands({
+      locateFile: file => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+    });
+
+    hands.setOptions({
+      maxNumHands: 2, // Increased to handle multiple hands
+      modelComplexity: 1,
+      minDetectionConfidence: 0.85,
+      minTrackingConfidence: 0.85
+    });
+
+    hands.onResults(results => {
+      overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+
+      if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+        // Use the first detected hand (most confident)
+        const landmarks = results.multiHandLandmarks[0];
+        const handedness = results.multiHandedness[0].label; // "Left" or "Right"
+
+        if (!smoothedLandmarks) {
+          smoothedLandmarks = landmarks.map(landmark => ({ x: landmark.x, y: landmark.y }));
+        } else {
+          smoothedLandmarks = landmarks.map((landmark, i) => ({
+            x: smoothedLandmarks[i].x * (1 - smoothingFactor) + landmark.x * smoothingFactor,
+            y: smoothedLandmarks[i].y * (1 - smoothingFactor) + landmark.y * smoothingFactor
+          }));
+        }
+
+        overlayCtx.save();
+        overlayCtx.translate(overlayCanvas.width, 0);
+        overlayCtx.scale(-1, 1);
+        drawConnectors(overlayCtx, smoothedLandmarks, HAND_CONNECTIONS, { color: '#0ff', lineWidth: 4 });
+        drawLandmarks(overlayCtx, smoothedLandmarks, { color: '#fff', lineWidth: 2, radius: 6 });
+        overlayCtx.restore();
+
+        const fingers = fingersUp(landmarks);
+        const indexTip = landmarks[8];
+
+        let x = indexTip.x * overlayCanvas.width;
+        let y = indexTip.y * overlayCanvas.height;
+
+        const offsetX = (document.documentElement.clientWidth - overlayCanvas.width) / 2;
+        const offsetY = (document.documentElement.clientHeight - overlayCanvas.height) / 2;
+        x += offsetX;
+        y += offsetY;
+
+        x = Math.max(offsetX, Math.min(x, overlayCanvas.width + offsetX));
+        y = Math.max(offsetY, Math.min(y, overlayCanvas.height + offsetY));
+
+        if (smoothedX === null || smoothedY === null) {
+          smoothedX = x;
+          smoothedY = y;
+        } else {
+          smoothedX = smoothedX * (1 - smoothingFactor) + x * smoothingFactor;
+          smoothedY = smoothedY * (1 - smoothingFactor) + y * smoothingFactor;
+        }
+
+        const drawX = overlayCanvas.width - (smoothedX - offsetX);
+        const drawY = smoothedY - offsetY;
+
+        if (fingers[1] === 1 && fingers[2] === 0) {
+          if (eraserMode) {
+            eraseAt(drawX, drawY);
+            prevX = null;
+            prevY = null;
+          } else {
+            drawLine(drawX, drawY);
+          }
+        } else {
+          prevX = null;
+          prevY = null;
+        }
+
+        overlayCtx.beginPath();
+        overlayCtx.arc(drawX, drawY, 8, 0, 2 * Math.PI);
+        overlayCtx.fillStyle = eraserMode ? '#fff' : currentColor;
+        overlayCtx.fill();
+      } else {
+        prevX = null;
+        prevY = null;
+        smoothedX = null;
+        smoothedY = null;
+        smoothedLandmarks = null;
+      }
+    });
+
+    async function setupCamera() {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      video.srcObject = stream;
+
+      await new Promise(resolve => {
+        video.onloadedmetadata = () => {
+          videoWidth = video.videoWidth;
+          videoHeight = video.videoHeight;
+          resolve();
+        };
+      });
+
+      const camera = new Camera(video, {
+        onFrame: async () => {
+          await hands.send({ image: video });
+        },
+        width: videoWidth,
+        height: videoHeight
+      });
+
+      return camera;
+    }
+
+    async function init() {
+      try {
+        const camera = await setupCamera();
+        await camera.start();
+        resizeCanvases();
+        window.addEventListener('resize', resizeCanvases);
+      } catch (err) {
+        alert('Failed to access webcam. Please check permissions.');
+        console.error(err);
+      }
+    }
+
+    document.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          btn.click();
+        }
+      });
+    });
+
+    init();
+  </script>
+</body>
+</html>

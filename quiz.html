@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mental Health Quiz</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+  <style>
+    body {
+      background: linear-gradient(to bottom, #f9a8d4, #c4b5fd);
+      font-family: 'Arial', sans-serif;
+      color: #1e293b;
+      overflow-y: auto;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .header-container {
+      background: linear-gradient(45deg, #67e8f9, #f9a8d4);
+      padding: 1rem;
+      border-radius: 16px;
+      margin: 1rem;
+      width: fit-content;
+      box-shadow: 0 0 20px rgba(103, 232, 249, 0.5);
+      animation: pulse 2s infinite ease-in-out;
+    }
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+    .ai-orb {
+      position: fixed;
+      width: 15px;
+      height: 15px;
+      background: radial-gradient(circle, #67e8f9, #f9a8d4);
+      border-radius: 50%;
+      animation: float 3s ease-in-out forwards;
+      pointer-events: none;
+      z-index: 50;
+    }
+    .chibi-heart {
+      position: fixed;
+      width: 20px;
+      height: 20px;
+      background: url('https://img.icons8.com/emoji/48/000000/heart-suit.png');
+      background-size: cover;
+      animation: float 2s ease-in-out forwards;
+      pointer-events: none;
+      z-index: 50;
+    }
+    @keyframes float {
+      0% { transform: translateY(0); opacity: 1; }
+      100% { transform: translateY(-100px); opacity: 0; }
+    }
+    .chibi-robot {
+      width: 40px;
+      height: 40px;
+      background: url('https://img.icons8.com/emoji/48/000000/robot.png');
+      background-size: cover;
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      animation: bounce 2s infinite ease-in-out;
+    }
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    .ai-btn {
+      background: linear-gradient(45deg, #f9a8d4, #67e8f9);
+      color: white;
+      padding: 8px 16px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      width: 100%;
+      margin: 0.5rem 0;
+    }
+    .ai-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 8px 20px rgba(103, 232, 249, 0.5);
+    }
+    .ai-btn:focus {
+      outline: 3px solid #67e8f9;
+      outline-offset: 2px;
+    }
+    .quiz-container {
+      background: rgba(255, 255, 255, 0.7);
+      border: 2px solid #f9a8d4;
+      border-radius: 16px;
+      padding: 1rem;
+      margin: 1rem;
+      max-width: 90%;
+      box-shadow: 0 4px 20px rgba(249, 168, 212, 0.4);
+      text-align: center;
+    }
+    .speech-bubble {
+      position: relative;
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      max-width: 80%;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .speech-bubble::after {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-width: 10px;
+      border-style: solid;
+      border-color: #ffffff transparent transparent transparent;
+    }
+    .results-container {
+      background: rgba(255, 255, 255, 0.7);
+      border-radius: 12px;
+      padding: 1rem;
+      max-width: 90%;
+      margin: 1rem;
+    }
+    @media (max-width: 768px) {
+      .header-container {
+        padding: 0.5rem;
+      }
+      h1 {
+        font-size: 1.5rem;
+      }
+      .quiz-container {
+        padding: 0.5rem;
+      }
+      .speech-bubble {
+        font-size: 0.9rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="header-container">
+    <h1 class="text-2xl sm:text-3xl font-bold text-white">Mental Health Quiz 🌟</h1>
+  </div>
+  <div class="flex flex-col sm:flex-row gap-4 mb-4">
+    <button id="backBtn" class="ai-btn" aria-label="Back to dashboard">Back</button>
+  </div>
+  <div id="quizArea" class="quiz-container">
+    <div class="speech-bubble" id="questionText">Hey there! Let’s check in on your mental health with a quick quiz.</div>
+    <div id="optionsArea" class="flex flex-col"></div>
+    <button id="startBtn" class="ai-btn" aria-label="Start mental health quiz">Start Quiz</button>
+  </div>
+  <div id="resultsArea" class="results-container hidden">
+    <p class="font-bold text-cyan-600 text-lg">Your Results</p>
+    <p id="resultText" class="mb-4"></p>
+    <p class="font-bold text-cyan-600">Suggestions for You</p>
+    <ul id="suggestionsList" class="list-disc list-inside text-left mb-4"></ul>
+    <button id="retakeBtn" class="ai-btn" aria-label="Retake mental health quiz">Retake Quiz</button>
+  </div>
+  <div class="chibi-robot"></div>
+
+  <script>
+    const backBtn = document.getElementById('backBtn');
+    const startBtn = document.getElementById('startBtn');
+    const quizArea = document.getElementById('quizArea');
+    const resultsArea = document.getElementById('resultsArea');
+    const questionText = document.getElementById('questionText');
+    const optionsArea = document.getElementById('optionsArea');
+    const resultText = document.getElementById('resultText');
+    const suggestionsList = document.getElementById('suggestionsList');
+    const retakeBtn = document.getElementById('retakeBtn');
+
+    const questions = [
+      {
+        text: "How often have you felt stressed or overwhelmed in the past week?",
+        options: ["Not at all", "Rarely", "Sometimes", "Often", "Always"],
+        scores: [0, 1, 2, 3, 4]
+      },
+      {
+        text: "How well have you been sleeping lately?",
+        options: ["Very well", "Well", "Okay", "Poorly", "Not at all"],
+        scores: [0, 1, 2, 3, 4]
+      },
+      {
+        text: "Have you been able to enjoy your hobbies or activities?",
+        options: ["Yes, fully", "Mostly", "Somewhat", "Not really", "Not at all"],
+        scores: [0, 1, 2, 3, 4]
+      },
+      {
+        text: "How often do you feel anxious or worried?",
+        options: ["Never", "Rarely", "Sometimes", "Often", "Always"],
+        scores: [0, 1, 2, 3, 4]
+      },
+      {
+        text: "Do you feel you have someone to talk to when you’re feeling down?",
+        options: ["Yes, always", "Usually", "Sometimes", "Rarely", "Never"],
+        scores: [0, 1, 2, 3, 4]
+      },
+      {
+        text: "How often do you feel tired or low-energy?",
+        options: ["Never", "Rarely", "Sometimes", "Often", "Always"],
+        scores: [0, 1, 2, 3, 4]
+      },
+      {
+        text: "Have you been able to focus on your tasks?",
+        options: ["Yes, easily", "Mostly", "Somewhat", "Not really", "Not at all"],
+        scores: [0, 1, 2, 3, 4]
+      },
+      {
+        text: "How often do you feel hopeful about the future?",
+        options: ["Always", "Often", "Sometimes", "Rarely", "Never"],
+        scores: [0, 1, 2, 3, 4]
+      },
+      {
+        text: "Do you feel disconnected from others?",
+        options: ["Not at all", "Rarely", "Sometimes", "Often", "Always"],
+        scores: [0, 1, 2, 3, 4]
+      },
+      {
+        text: "How often do you experience mood swings?",
+        options: ["Never", "Rarely", "Sometimes", "Often", "Always"],
+        scores: [0, 1, 2, 3, 4]
+      }
+    ];
+
+    let currentQuestion = -1;
+    let totalScore = 0;
+
+    function createOrbAnimation() {
+      for (let i = 0; i < 5; i++) {
+        let orb = document.createElement('div');
+        orb.className = 'ai-orb';
+        orb.style.left = Math.random() * window.innerWidth + 'px';
+        orb.style.top = window.innerHeight - 100 + 'px';
+        document.body.appendChild(orb);
+        setTimeout(() => orb.remove(), 3000);
+      }
+    }
+
+    function createHeartAnimation() {
+      for (let i = 0; i < 3; i++) {
+        let heart = document.createElement('div');
+        heart.className = 'chibi-heart';
+        heart.style.left = Math.random() * window.innerWidth + 'px';
+        heart.style.top = window.innerHeight - 100 + 'px';
+        document.body.appendChild(heart);
+        setTimeout(() => heart.remove(), 2000);
+      }
+    }
+
+    function showQuestion() {
+      currentQuestion++;
+      if (currentQuestion >= questions.length) {
+        showResults();
+        return;
+      }
+      startBtn.classList.add('hidden');
+      questionText.textContent = `Question ${currentQuestion + 1}: ${questions[currentQuestion].text}`;
+      optionsArea.innerHTML = '';
+      questions[currentQuestion].options.forEach((option, index) => {
+        const btn = document.createElement('button');
+        btn.className = 'ai-btn';
+        btn.textContent = option;
+        btn.setAttribute('aria-label', `Select ${option}`);
+        btn.addEventListener('click', () => {
+          totalScore += questions[currentQuestion].scores[index];
+          createHeartAnimation();
+          setTimeout(showQuestion, 500);
+        });
+        btn.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            btn.click();
+          }
+        });
+        optionsArea.appendChild(btn);
+      });
+    }
+
+    function showResults() {
+      quizArea.classList.add('hidden');
+      resultsArea.classList.remove('hidden');
+      let message = '';
+      const suggestions = [];
+
+      if (totalScore <= 10) {
+        message = `Your score is ${totalScore}/40. You seem to be doing well! Keep nurturing your mental health with self-care.`;
+        suggestions.push(`Try a <a href="./breathing.html" class="text-cyan-600 underline">breathing exercise</a> to stay calm.`);
+        suggestions.push(`Reflect on gratitude with the <a href="./gratitude.html" class="text-cyan-600 underline">Gratitude Journal</a>.`);
+      } else if (totalScore <= 20) {
+        message = `Your score is ${totalScore}/40. You might be experiencing some stress. Consider taking breaks and talking to someone.`;
+        suggestions.push(`Unwind with a <a href="./game1.html" class="text-cyan-600 underline">fun game</a> to lift your mood.`);
+        suggestions.push(`Chat with Akshra’s Bot on <a href="./index.html#chatArea" class="text-cyan-600 underline">the chatbot</a> for support.`);
+      } else if (totalScore <= 30) {
+        message = `Your score is ${totalScore}/40. You may be feeling overwhelmed. It might help to reach out for support or try relaxing activities.`;
+        suggestions.push(`Listen to calming music on <a href="./music.html" class="text-cyan-600 underline">Akshzz Music</a>.`);
+        suggestions.push(`Try a <a href="./breathing.html" class="text-cyan-600 underline">breathing exercise</a> to relax.`);
+      } else {
+        message = `Your score is ${totalScore}/40. It looks like you’re struggling quite a bit. Please consider speaking to a friend or professional for support.`;
+        suggestions.push(`Chat with someone on <a href="./index.html#chatArea" class="text-cyan-600 underline">the chatbot</a> to feel heard.`);
+        suggestions.push(`Engage in a soothing <a href="./drawing.html" class="text-cyan-600 underline">drawing activity</a>.`);
+      }
+
+      resultText.textContent = message;
+      suggestionsList.innerHTML = suggestions.map(s => `<li>${s}</li>`).join('');
+
+      localStorage.setItem('mentalHealthQuizResults', JSON.stringify({
+        score: totalScore,
+        timestamp: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })
+      }));
+    }
+
+    function goBack() {
+      createHeartAnimation();
+      // Navigate back to index.html with the dashboard hash
+      window.location.href = './index.html#dashboard';
+    }
+
+    startBtn.addEventListener('click', () => {
+      showQuestion();
+      createOrbAnimation();
+    });
+
+    backBtn.addEventListener('click', goBack);
+
+    retakeBtn.addEventListener('click', () => {
+      currentQuestion = -1;
+      totalScore = 0;
+      quizArea.classList.remove('hidden');
+      resultsArea.classList.add('hidden');
+      questionText.textContent = 'Hey there! Let’s check in on your mental health with a quick quiz.';
+      optionsArea.innerHTML = '';
+      startBtn.classList.remove('hidden');
+      createOrbAnimation();
+    });
+
+    document.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          btn.click();
+        }
+      });
+    });
+
+    createOrbAnimation();
+  </script>
+</body>
+</html>

@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Catch the Falling Stars</title>
+  <style>
+    body, html {
+      margin: 0; padding: 0; overflow: hidden;
+      background: linear-gradient(to bottom, #000428, #004e92);
+      color: white;
+      font-family: Arial, sans-serif;
+      user-select: none;
+    }
+    #container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+    }
+    video#webcam {
+      position: absolute;
+      right: 10px;
+      top: 10px;
+      width: 200px;
+      height: 150px;
+      border: 2px solid white;
+      border-radius: 10px;
+      z-index: 2;
+    }
+    canvas#gameCanvas {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 1;
+    }
+    #score {
+      position: fixed;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 24px;
+      font-weight: bold;
+      text-shadow: 0 0 5px #000;
+      z-index: 3;
+    }
+    #gameOver {
+      position: fixed;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 48px;
+      background: rgba(0,0,0,0.7);
+      padding: 30px;
+      border-radius: 15px;
+      display: none;
+      text-align: center;
+      box-shadow: 0 0 20px red;
+      z-index: 5;
+    }
+    #restartBtn {
+      margin-top: 20px;
+      font-size: 24px;
+      padding: 10px 20px;
+      cursor: pointer;
+      border: none;
+      background-color: yellow;
+      color: black;
+      border-radius: 10px;
+      font-weight: bold;
+      transition: background-color 0.3s ease;
+    }
+    #restartBtn:hover {
+      background-color: orange;
+    }
+    #backBtn {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      font-size: 18px;
+      padding: 8px 16px;
+      cursor: pointer;
+      border: 2px solid white;
+      background-color: yellow;
+      color: black;
+      border-radius: 10px;
+      font-weight: bold;
+      transition: background-color 0.3s ease;
+      z-index: 10;
+    }
+    #backBtn:hover {
+      background-color: orange;
+    }
+    .chibi-heart {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background: url('https://img.icons8.com/emoji/48/000000/heart-suit.png');
+      background-size: cover;
+      animation: float 2s ease-in-out forwards;
+      pointer-events: none;
+      z-index: 10;
+    }
+    @keyframes float {
+      0% { transform: translateY(0); opacity: 1; }
+      100% { transform: translateY(-100px); opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <video id="webcam" autoplay playsinline muted></video>
+    <canvas id="gameCanvas"></canvas>
+    <button id="backBtn" aria-label="Back to dashboard">⬅️ Back</button>
+  </div>
+  <div id="score">Score: 0 | Missed: 0</div>
+  <div id="gameOver">
+    🛑 Game Over! 🛑<br />
+    Your Score: <span id="finalScore">0</span><br />
+    <button id="restartBtn" aria-label="Restart game">Restart</button>
+  </div>
+
+  <audio id="bgMusic" src="https://cdn.pixabay.com/download/audio/2022/03/24/audio_8f93480bb6.mp3?filename=summer-chillout-ambient-11289.mp3" loop></audio>
+
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+
+  <script>
+    const videoElement = document.getElementById('webcam');
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const scoreDisplay = document.getElementById('score');
+    const gameOverDiv = document.getElementById('gameOver');
+    const finalScoreSpan = document.getElementById('finalScore');
+    const restartBtn = document.getElementById('restartBtn');
+    const bgMusic = document.getElementById('bgMusic');
+
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    let stars = [];
+    let basketX = canvas.width / 2;
+    let score = 0;
+    let missed = 0;
+    let isGameOver = false;
+
+    bgMusic.volume = 0.3;
+    bgMusic.play();
+
+    function spawnStar() {
+      if (isGameOver) return;
+      const minX = canvas.width * 0.3;
+      const maxX = canvas.width * 0.7;
+
+      stars.push({
+        x: Math.random() * (maxX - minX) + minX,
+        y: 0,
+        size: 30,
+        speed: 1 + Math.random(),
+        emoji: "🌟"
+      });
+    }
+
+    setInterval(spawnStar, 1000);
+
+    const hands = new Hands({
+      locateFile: (file) => {
+        return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+      }
+    });
+
+    hands.setOptions({
+      maxNumHands: 1,
+      modelComplexity: 1,
+      minDetectionConfidence: 0.7,
+      minTrackingConfidence: 0.7
+    });
+
+    hands.onResults(onResults);
+
+    const camera = new Camera(videoElement, {
+      onFrame: async () => {
+        await hands.send({image: videoElement});
+      },
+      width: 640,
+      height: 480
+    });
+    camera.start();
+
+    function onResults(results) {
+      if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+        const landmarks = results.multiHandLandmarks[0];
+        const indexTip = landmarks[8];
+        basketX = indexTip.x * canvas.width;
+      }
+    }
+
+    function createHeartAnimation() {
+      for (let i = 0; i < 3; i++) {
+        let heart = document.createElement('div');
+        heart.className = 'chibi-heart';
+        heart.style.left = Math.random() * window.innerWidth + 'px';
+        heart.style.top = window.innerHeight - 100 + 'px';
+        document.body.appendChild(heart);
+        setTimeout(() => heart.remove(), 2000);
+      }
+    }
+
+    function goBack() {
+      createHeartAnimation();
+      // Navigate back to index.html with the dashboard hash
+      window.location.href = './index.html#dashboard';
+    }
+
+    function updateGame() {
+      if (isGameOver) return;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      ctx.fillStyle = 'yellow';
+      ctx.fillRect(basketX - 50, canvas.height - 60, 100, 20);
+
+      stars.forEach((star, index) => {
+        star.y += star.speed;
+        ctx.font = `${star.size}px Arial`;
+        ctx.fillText(star.emoji, star.x, star.y);
+
+        if (
+          star.y > canvas.height - 60 &&
+          star.x > basketX - 50 &&
+          star.x < basketX + 50
+        ) {
+          score++;
+          stars.splice(index, 1);
+        } else if (star.y > canvas.height) {
+          missed++;
+          stars.splice(index, 1);
+        }
+      });
+
+      scoreDisplay.innerText = `Score: ${score} | Missed: ${missed}`;
+
+      if (missed >= 10) {
+        isGameOver = true;
+        finalScoreSpan.textContent = score;
+        gameOverDiv.style.display = 'block';
+        bgMusic.pause();
+      }
+
+      requestAnimationFrame(updateGame);
+    }
+
+    document.getElementById('backBtn').addEventListener('click', goBack);
+
+    restartBtn.addEventListener('click', () => {
+      stars = [];
+      score = 0;
+      missed = 0;
+      isGameOver = false;
+      gameOverDiv.style.display = 'none';
+      scoreDisplay.innerText = `Score: ${score} | Missed: ${missed}`;
+      bgMusic.currentTime = 0;
+      bgMusic.play();
+      updateGame();
+    });
+
+    document.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          btn.click();
+        }
+      });
+    });
+
+    updateGame();
+  </script>
+</body>
+</html>

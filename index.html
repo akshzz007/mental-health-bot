@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mental Health Bot</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&family=Lora:wght@400;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Roboto', sans-serif;
+      background: linear-gradient(to bottom, #f9a8d4, #c4b5fd);
+      color: #1e293b;
+      overflow: hidden;
+    }
+    .ai-orb {
+      position: fixed;
+      width: 15px;
+      height: 15px;
+      background: radial-gradient(circle, #67e8f9, #f9a8d4);
+      border-radius: 50%;
+      animation: float 3s ease-in-out forwards;
+      pointer-events: none;
+      z-index: 50;
+    }
+    .chibi-heart {
+      position: fixed;
+      width: 20px;
+      height: 20px;
+      background: url('https://img.icons8.com/emoji/48/000000/heart-suit.png');
+      background-size: cover;
+      animation: float 2s ease-in-out forwards;
+      pointer-events: none;
+      z-index: 50;
+    }
+    @keyframes float {
+      0% { transform: translateY(0); opacity: 1; }
+      100% { transform: translateY(-100px); opacity: 0; }
+    }
+    #introPage {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: linear-gradient(45deg, #f9a8d4, #67e8f9);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+      text-align: center;
+      padding: 20px;
+      animation: fadeIn 1s ease-in-out;
+    }
+    #introPage h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 48px;
+      color: #000;
+      text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+      margin-bottom: 20px;
+    }
+    #introPage p {
+      font-family: 'Roboto', sans-serif;
+      font-size: 18px;
+      color: #000;
+      max-width: 600px;
+      margin-bottom: 20px;
+      line-height: 1.6;
+      text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+    }
+    #startNowBtn {
+      background: linear-gradient(45deg, #f9a8d4, #67e8f9);
+      color: black;
+      border: none;
+      border-radius: 12px;
+      padding: 15px 30px;
+      font-size: 18px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    #startNowBtn:hover {
+      transform: scale(1.1) rotate(2deg);
+      box-shadow: 0 8px 20px rgba(103, 232, 249, 0.5);
+    }
+    #startNowBtn:focus {
+      outline: 3px solid #67e8f9;
+      outline-offset: 2px;
+    }
+    header {
+      width: 100%;
+      text-align: center;
+      background: linear-gradient(45deg, #67e8f9, #f9a8d4);
+      padding: 20px 0;
+      font-family: 'Playfair Display', serif;
+      font-size: 36px;
+      color: #fff;
+      position: relative;
+      z-index: 10;
+      transition: opacity 0.5s ease;
+      box-shadow: 0 0 20px rgba(103, 232, 249, 0.5);
+      animation: pulse 2s infinite ease-in-out;
+      display: none;
+    }
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+    header::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 12px;
+      background: #67e8f9;
+      border-radius: 6px 0 0 6px;
+    }
+    header::after {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: linear-gradient(90deg, #f9a8d4, #67e8f9);
+      opacity: 0.8;
+    }
+    header span {
+      display: inline-block;
+      animation: glow 2s ease-in-out infinite alternate;
+    }
+    @keyframes glow {
+      from { text-shadow: 0 0 5px rgba(103, 232, 249, 0.5); }
+      to { text-shadow: 0 0 15px rgba(103, 232, 249, 0.8); }
+    }
+    #webcam-container {
+      width: 100vw;
+      height: 100vh;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 1;
+    }
+    canvas {
+      border-radius: 16px;
+      max-width: 90%;
+      height: auto;
+      background: rgba(255, 255, 255, 0.9);
+      border: 2px solid #f9a8d4;
+      box-shadow: 0 4px 20px rgba(249, 168, 212, 0.4);
+    }
+    #emotionText, #notify {
+      position: absolute;
+      width: 100%;
+      text-align: center;
+      font-size: 24px;
+      font-weight: bold;
+      z-index: 2;
+      text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+      display: none;
+    }
+    #emotionText {
+      top: 70%;
+      color: #67e8f9;
+    }
+    #notify {
+      top: 80%;
+      color: #f9a8d4;
+    }
+    #chatbot-container {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 4;
+      background: rgba(0, 0, 0, 0.85);
+      display: flex;
+      flex-direction: column;
+    }
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      flex-grow: 1;
+    }
+    #dashboardBtn, #restartBtn, #botDashboardBtn {
+      position: fixed;
+      background: linear-gradient(45deg, #f9a8d4, #67e8f9);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      padding: 12px 20px;
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
+      z-index: 11;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      display: none;
+      align-items: center;
+      gap: 8px;
+    }
+    #dashboardBtn:hover, #restartBtn:hover, #botDashboardBtn:hover {
+      transform: scale(1.1) rotate(2deg);
+      box-shadow: 0 8px 20px rgba(103, 232, 249, 0.5);
+    }
+    #dashboardBtn:focus, #restartBtn:focus, #botDashboardBtn:focus {
+      outline: 3px solid #67e8f9;
+      outline-offset: 2px;
+    }
+    #dashboardBtn {
+      top: 80px;
+      left: 20px;
+    }
+    #restartBtn {
+      top: 20px;
+      right: 20px;
+    }
+    #botDashboardBtn {
+      top: 40px;
+      left: 20px;
+    }
+    #dashboardMenu {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(12px);
+      z-index: 2000;
+      transform: translateX(100%);
+      transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      overflow: auto;
+      padding: 40px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    #dashboardMenu.open {
+      transform: translateX(0);
+    }
+    #dashboardMenu h2 {
+      font-family: 'Lora', serif;
+      color: #1e293b;
+      font-size: 28px;
+      margin: 20px 0;
+      padding-bottom: 10px;
+      border-bottom: 3px solid #67e8f9;
+      width: 100%;
+      max-width: 800px;
+      text-align: center;
+      position: relative;
+    }
+    #dashboardMenu h2::after {
+      content: "🤖";
+      position: absolute;
+      right: 0;
+      font-size: 24px;
+    }
+    .section {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      width: 100%;
+      max-width: 800px;
+      margin-bottom: 30px;
+    }
+    .card {
+      background: rgba(255, 255, 255, 0.9);
+      border: 2px solid #f9a8d4;
+      border-radius: 16px;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .card:hover {
+      transform: translateY(-10px) scale(1.05);
+      box-shadow: 0 10px 25px rgba(249, 168, 212, 0.6);
+    }
+    .card:focus {
+      outline: 3px solid #67e8f9;
+      outline-offset: 2px;
+    }
+    .card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(103, 232, 249, 0.3), transparent);
+      transition: 0.5s;
+    }
+    .card:hover::before {
+      left: 100%;
+    }
+    .card span {
+      font-size: 40px;
+      display: block;
+      margin-bottom: 10px;
+    }
+    .card p {
+      font-family: 'Roboto', sans-serif;
+      font-size: 18px;
+      font-weight: 500;
+      color: #1e293b;
+    }
+    #closeDashboard {
+      background: transparent;
+      border: none;
+      font-size: 36px;
+      color: #1e293b;
+      cursor: pointer;
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      transition: transform 0.3s ease;
+    }
+    #closeDashboard:hover {
+      transform: rotate(90deg);
+    }
+    .emotion-happy { box-shadow: 0 0 40px rgba(103, 232, 249, 0.8); }
+    .emotion-neutral { box-shadow: 0 0 40px rgba(196, 181, 253, 0.8); }
+    .emotion-sad { box-shadow: 0 0 40px rgba(249, 168, 212, 0.8); }
+    .emotion-angry { box-shadow: 0 0 40px rgba(236, 72, 153, 0.8); }
+    .emotion-surprised { box-shadow: 0 0 40px rgba(147, 51, 234, 0.8); }
+    .spinner {
+      width: 40px;
+      height: 40px;
+      background: url('https://img.icons8.com/emoji/48/000000/robot.png');
+      background-size: cover;
+      animation: spin 1s linear infinite;
+      position: absolute;
+      top: 60%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 2;
+      display: none;
+    }
+    @keyframes spin {
+      0% { transform: translate(-50%, -50%) rotate(0deg); }
+      100% { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+    #resultScreen {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 3;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      animation: fadeIn 0.5s ease-in-out;
+    }
+    #resultScreen p {
+      font-family: 'Lora', serif;
+      font-size: 48px;
+      font-weight: bold;
+      text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
+      color: #67e8f9;
+      text-align: center;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @media (max-width: 768px) {
+      #introPage h1 {
+        font-size: 36px;
+      }
+      #introPage p {
+        font-size: 16px;
+        max-width: 80%;
+      }
+      #startNowBtn {
+        padding: 12px 24px;
+        font-size: 16px;
+      }
+      header {
+        font-size: 28px;
+        padding: 15px 0;
+      }
+      #dashboardMenu {
+        padding: 20px 10px;
+      }
+      .section {
+        grid-template-columns: 1fr;
+      }
+      .card {
+        padding: 15px;
+      }
+      .card span {
+        font-size: 30px;
+      }
+      .card p {
+        font-size: 16px;
+      }
+      #emotionText, #notify {
+        font-size: 20px;
+      }
+      #resultScreen p {
+        font-size: 36px;
+      }
+      #dashboardBtn, #restartBtn, #botDashboardBtn {
+        padding: 10px 16px;
+        font-size: 14px;
+      }
+    }
+    @media (max-width: 480px) {
+      #introPage h1 {
+        font-size: 28px;
+      }
+      #introPage p {
+        font-size: 14px;
+        max-width: 90%;
+      }
+      #startNowBtn {
+        padding: 10px 20px;
+        font-size: 14px;
+      }
+      header {
+        font-size: 22px;
+        padding: 12px 0;
+      }
+      #dashboardMenu {
+        padding: 15px 5px;
+      }
+      .card {
+        padding: 12px;
+      }
+      .card span {
+        font-size: 24px;
+      }
+      .card p {
+        font-size: 14px;
+      }
+      #emotionText, #notify {
+        font-size: 16px;
+      }
+      #resultScreen p {
+        font-size: 28px;
+      }
+      #dashboardBtn, #restartBtn, #botDashboardBtn {
+        padding: 8px 12px;
+        font-size: 12px;
+      }
+      #dashboardBtn {
+        top: 60px;
+        left: 10px;
+      }
+      #restartBtn {
+        top: 10px;
+        right: 10px;
+      }
+      #botDashboardBtn {
+        top: 30px;
+        left: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="introPage" role="dialog" aria-label="Introduction to Mental Health Bot">
+    <h1>🌿 Mental Health Bot 🤖</h1>
+    <p>Welcome to the Mental Health Bot! This project uses AI to detect your emotions via webcam and offers a chatbot to discuss how you're feeling. Enjoy interactive games like Drawing Canvas, Gesture Pong, and wellness activities like Breathing Exercises and Gratitude Journal to boost your mood!</p>
+    <p>Created by AKSHRA, this bot aims to promote mental health awareness through fun and supportive tools. Let's make your day brighter!</p>
+    <button id="startNowBtn" aria-label="Start Mental Health Bot">Start Now</button>
+  </div>
+  <header><span>🌿 Mental Health Bot 🤖</span></header>
+  <div id="webcam-container"></div>
+  <div class="spinner" id="spinner"></div>
+  <div id="emotionText">Detecting Emotion...</div>
+  <div id="notify"></div>
+  <div id="resultScreen">
+    <p id="resultText">Emotion Detected: Happy</p>
+  </div>
+  <button id="dashboardBtn" aria-label="Open Dashboard"><i class="fas fa-gamepad"></i> Dashboard</button>
+  <button id="restartBtn" aria-label="Restart Emotion Detection"><i class="fas fa-redo"></i> Restart</button>
+  <button id="botDashboardBtn" aria-label="Open Dashboard in Chatbot"><i class="fas fa-gamepad"></i> Dashboard</button>
+  <div id="chatbot-container" role="region" aria-label="Chatbot interface">
+    <iframe id="chatbotFrame"
+      src="https://cdn.botpress.cloud/webchat/v2.4/shareable.html?configUrl=https://files.bpcontent.cloud/2025/05/13/11/20250513115504-VIRETJPF.json&clear=true"
+      aria-label="Chatbot Interface">
+    </iframe>
+  </div>
+  <div id="dashboardMenu" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Dashboard">
+    <button id="closeDashboard" aria-label="Close Dashboard">×</button>
+    <h2>🎮 Games</h2>
+    <div class="section" role="group" aria-label="Games Section">
+      <div class="card" id="openDrawing" tabindex="0" aria-label="Open Drawing Canvas">
+        <span>🎨</span>
+        <p>Drawing Canvas</p>
+      </div>
+      <div class="card" id="openCatchStars" tabindex="0" aria-label="Open Catch the Falling Stars">
+        <span>🌟</span>
+        <p>Catch the Falling Stars</p>
+      </div>
+      <div class="card" id="openPong" tabindex="0" aria-label="Open Gesture Pong">
+        <span>🏓</span>
+        <p>Gesture Pong</p>
+      </div>
+    </div>
+    <h2>🌼 Wellness</h2>
+    <div class="section" role="group" aria-label="Wellness Section">
+      <div class="card" id="openBreathing" tabindex="0" aria-label="Open Breathing Exercise">
+        <span>🌬️</span>
+        <p>Breathing Exercise</p>
+      </div>
+      <div class="card" id="openGratitude" tabindex="0" aria-label="Open Gratitude Journal">
+        <span>🌼</span>
+        <p>Gratitude Journal</p>
+      </div>
+      <div class="card" id="openQuiz" tabindex="0" aria-label="Open Mental Health Quiz">
+        <span>🧠</span>
+        <p>Mental Health Quiz</p>
+      </div>
+      <div class="card" id="openFunQuiz" tabindex="0" aria-label="Open Fun AI Quiz">
+        <span>🎉</span>
+        <p>Fun AI Quiz</p>
+      </div>
+    </div>
+    <h2>🎵 Music</h2>
+    <div class="section" role="group" aria-label="Music Section" id="MusicSection">
+      <div class="card" id="openMusic" tabindex="0" aria-label="Open Akshzz Music">
+        <span>🎵</span>
+        <p>Akshzz Music</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.9.0"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8.4/dist/teachablemachine-image.min.js"></script>
+  <script>
+    const URL = "./";
+    let model, webcam, maxPredictions;
+    let detected = false;
+    let consistentEmotion = null;
+    let detectionStartTime = null;
+    let webcamInitialized = false;
+    let isBotView = false;
+
+    const emotionText = document.getElementById("emotionText");
+    const notify = document.getElementById("notify");
+    const spinner = document.getElementById("spinner");
+    const chatbotContainer = document.getElementById("chatbot-container");
+    const dashboardBtn = document.getElementById("dashboardBtn");
+    const botDashboardBtn = document.getElementById("botDashboardBtn");
+    const dashboardMenu = document.getElementById("dashboardMenu");
+    const closeDashboard = document.getElementById("closeDashboard");
+    const openDrawingBtn = document.getElementById("openDrawing");
+    const openCatchStarsBtn = document.getElementById("openCatchStars");
+    const openPongBtn = document.getElementById("openPong");
+    const openBreathingBtn = document.getElementById("openBreathing");
+    const openGratitudeBtn = document.getElementById("openGratitude");
+    const openMusicBtn = document.getElementById("openMusic");
+    const openQuizBtn = document.getElementById("openQuiz");
+    const openFunQuizBtn = document.getElementById("openFunQuiz");
+    const webcamContainer = document.getElementById("webcam-container");
+    const header = document.querySelector("header");
+    const restartBtn = document.getElementById("restartBtn");
+    const chatbotFrame = document.getElementById("chatbotFrame");
+    const resultScreen = document.getElementById("resultScreen");
+    const resultText = document.getElementById("resultText");
+    const introPage = document.getElementById("introPage");
+    const startNowBtn = document.getElementById("startNowBtn");
+    let predictionBuffer = [];
+    const BUFFER_SIZE = 10;
+    const THRESHOLD = 0.65;
+    const DETECTION_DURATION = 3000;
+    const DISPLAY_DURATION = 1500;
+
+    // Preload model and webcam on page load
+    async function init() {
+      try {
+        const modelURL = URL + "model.json";
+        const metadataURL = URL + "metadata.json";
+        model = await tmImage.load(modelURL, metadataURL);
+        maxPredictions = model.getTotalClasses();
+        webcam = new tmImage.Webcam(350, 350, true);
+        await webcam.setup();
+        webcamContainer.appendChild(webcam.canvas);
+        webcamInitialized = true;
+        console.log("Model and webcam initialized successfully.");
+      } catch (err) {
+        console.error("Failed to initialize model or webcam:", err);
+        notify.textContent = "Failed to load model or webcam. Please check camera permissions.";
+        notify.style.display = "block";
+        webcamInitialized = false;
+      }
+    }
+
+    async function startDetection() {
+      if (!webcamInitialized || !webcam) {
+        notify.textContent = "Webcam not ready. Please ensure camera permissions are granted.";
+        notify.style.display = "block";
+        return;
+      }
+      try {
+        await webcam.play();
+        detected = false;
+        predictionBuffer = [];
+        emotionText.style.display = "block";
+        notify.style.display = "none";
+        spinner.style.display = "block";
+        chatbotContainer.style.display = "none";
+        dashboardBtn.style.display = "none";
+        botDashboardBtn.style.display = "none";
+        restartBtn.style.display = "none";
+        resultScreen.style.display = "none";
+        webcamContainer.style.display = "flex";
+        header.style.display = "block";
+        window.requestAnimationFrame(loop);
+      } catch (err) {
+        console.error("Failed to start webcam:", err);
+        notify.textContent = "Failed to start webcam. Please check camera permissions.";
+        notify.style.display = "block";
+      }
+    }
+
+    async function loop() {
+      if (!detected) {
+        webcam.update();
+        await predict();
+        window.requestAnimationFrame(loop);
+      }
+    }
+
+    async function predict() {
+      const prediction = await model.predict(webcam.canvas);
+      predictionBuffer.push(prediction);
+      if (predictionBuffer.length > BUFFER_SIZE) predictionBuffer.shift();
+
+      let avgPred = {};
+      model.getClassLabels().forEach(label => avgPred[label] = 0);
+      predictionBuffer.forEach(pred => {
+        for (let i = 0; i < pred.length; i++) {
+          const className = pred[i].className;
+          avgPred[className] += pred[i].probability;
+        }
+      });
+
+      for (let key in avgPred) {
+        avgPred[key] /= predictionBuffer.length;
+      }
+
+      let topEmotion = "";
+      let topProb = 0;
+      for (let key in avgPred) {
+        if (avgPred[key] > topProb) {
+          topEmotion = key.toLowerCase();
+          topProb = avgPred[key];
+        }
+      }
+
+      if (topProb > THRESHOLD) {
+        if (consistentEmotion === topEmotion) {
+          if (!detectionStartTime) {
+            detectionStartTime = Date.now();
+          }
+          const elapsed = Date.now() - detectionStartTime;
+          emotionText.textContent = `Emotion Detected: ${capitalize(topEmotion)} (${(topProb * 100).toFixed(1)}%)`;
+          applyEmotionGlow(topEmotion);
+          if (!detected && elapsed >= DETECTION_DURATION) {
+            detected = true;
+            notify.style.display = "none";
+            spinner.style.display = "none";
+            dashboardBtn.style.display = "block";
+            restartBtn.style.display = "block";
+            resultScreen.style.display = "flex";
+            resultText.textContent = `Emotion: ${capitalize(topEmotion)} (${(topProb * 100).toFixed(1)}%)`;
+            webcamContainer.style.display = "none";
+            emotionText.style.display = "none";
+            setTimeout(() => {
+              resultScreen.style.display = "none";
+              showChatbot();
+            }, DISPLAY_DURATION);
+          }
+        } else {
+          consistentEmotion = topEmotion;
+          detectionStartTime = Date.now();
+          emotionText.textContent = `Emotion Detected: ${capitalize(topEmotion)} (${(topProb * 100).toFixed(1)}%)`;
+          applyEmotionGlow(topEmotion);
+        }
+      } else {
+        emotionText.textContent = "Detecting Emotion...";
+        removeEmotionGlow();
+        consistentEmotion = null;
+        detectionStartTime = null;
+      }
+    }
+
+    function capitalize(str) {
+      return str.charAt(0).toUpperCase() + str.slice(1);
+    }
+
+    function applyEmotionGlow(emotion) {
+      webcamContainer.classList.remove("emotion-happy", "emotion-neutral", "emotion-sad", "emotion-angry", "emotion-surprised");
+      if (["happy", "neutral", "sad", "angry", "surprised"].includes(emotion)) {
+        webcamContainer.classList.add(`emotion-${emotion}`);
+      }
+    }
+
+    function removeEmotionGlow() {
+      webcamContainer.classList.remove("emotion-happy", "emotion-neutral", "emotion-sad", "emotion-angry", "emotion-surprised");
+    }
+
+    function showChatbot() {
+      webcamContainer.style.display = "none";
+      emotionText.style.display = "none";
+      notify.style.display = "none";
+      spinner.style.display = "none";
+      resultScreen.style.display = "none";
+      chatbotContainer.style.display = "flex";
+      header.style.display = "none";
+      dashboardBtn.style.display = "none";
+      botDashboardBtn.style.display = "block";
+      restartBtn.style.display = "none";
+      webcam.pause();
+      addRetakeButton();
+      chatbotFrame.addEventListener('error', () => {
+        console.error('Failed to load Botpress chatbot. Please check the URL or network.');
+        notify.textContent = "Error loading chatbot. Please try again.";
+        notify.style.display = "block";
+      }, { once: true });
+    }
+
+    function addRetakeButton() {
+      const iframeDoc = chatbotFrame.contentDocument || chatbotFrame.contentWindow.document;
+      if (!iframeDoc) return;
+
+      if (iframeDoc.getElementById('retakeBtn')) return;
+
+      const retakeBtn = iframeDoc.createElement('button');
+      retakeBtn.id = 'retakeBtn';
+      retakeBtn.innerHTML = '<i class="fas fa-redo"></i> Retake';
+      retakeBtn.style.position = 'absolute';
+      retakeBtn.style.top = '50px';
+      retakeBtn.style.right = '20px';
+      retakeBtn.style.background = 'linear-gradient(45deg, #f9a8d4, #67e8f9)';
+      retakeBtn.style.color = 'white';
+      retakeBtn.style.border = 'none';
+      retakeBtn.style.borderRadius = '8px';
+      retakeBtn.style.padding = '8px 12px';
+      retakeBtn.style.fontSize = '14px';
+      retakeBtn.style.fontWeight = '500';
+      retakeBtn.style.cursor = 'pointer';
+      retakeBtn.style.zIndex = '1000';
+      retakeBtn.style.transition = 'transform 0.3s ease, box-shadow 0.3s ease';
+      retakeBtn.style.display = 'flex';
+      retakeBtn.style.alignItems = 'center';
+      retakeBtn.style.gap = '5px';
+
+      retakeBtn.addEventListener('mouseover', () => {
+        retakeBtn.style.transform = 'scale(1.1)';
+        retakeBtn.style.boxShadow = '0 4px 10px rgba(103, 232, 249, 0.5)';
+      });
+      retakeBtn.addEventListener('mouseout', () => {
+        retakeBtn.style.transform = 'scale(1)';
+        retakeBtn.style.boxShadow = 'none';
+      });
+      retakeBtn.addEventListener('click', () => {
+        window.parent.hideChatbot();
+      });
+
+      iframeDoc.body.appendChild(retakeBtn);
+
+      const style = iframeDoc.createElement('style');
+      style.textContent = `
+        @media (max-width: 768px) {
+          #retakeBtn {
+            top: 45px;
+            right: 15px;
+            padding: 6px 10px;
+            font-size: 12px;
+          }
+        }
+        @media (max-width: 480px) {
+          #retakeBtn {
+            top: 40px;
+            right: 10px;
+            padding: 5px 8px;
+            font-size: 10px;
+          }
+        }
+      `;
+      iframeDoc.head.appendChild(style);
+    }
+
+    function hideChatbot() {
+      chatbotContainer.style.display = "none";
+      webcamContainer.style.display = "flex";
+      emotionText.style.display = "block";
+      notify.style.display = "none";
+      spinner.style.display = "block";
+      resultScreen.style.display = "none";
+      detected = false;
+      dashboardBtn.style.display = "none";
+      botDashboardBtn.style.display = "none";
+      restartBtn.style.display = "none";
+      consistentEmotion = null;
+      detectionStartTime = null;
+      predictionBuffer = [];
+      header.style.display = "block";
+      startDetection();
+    }
+
+    function createOrbAnimation() {
+      for (let i = 0; i < 5; i++) {
+        let orb = document.createElement('div');
+        orb.className = 'ai-orb';
+        orb.style.left = Math.random() * window.innerWidth + 'px';
+        orb.style.top = window.innerHeight - 100 + 'px';
+        document.body.appendChild(orb);
+        setTimeout(() => orb.remove(), 3000);
+      }
+    }
+
+    function createHeartAnimation() {
+      for (let i = 0; i < 3; i++) {
+        let heart = document.createElement('div');
+        heart.className = 'chibi-heart';
+        heart.style.left = Math.random() * window.innerWidth + 'px';
+        heart.style.top = window.innerHeight - 100 + 'px';
+        document.body.appendChild(heart);
+        setTimeout(() => heart.remove(), 2000);
+      }
+    }
+
+    function toggleDashboard(view) {
+      isBotView = view;
+      dashboardMenu.classList.add("open");
+      dashboardMenu.setAttribute("aria-hidden", "false");
+      dashboardBtn.style.display = "none";
+      botDashboardBtn.style.display = isBotView ? "none" : "block";
+      createOrbAnimation();
+      // Push dashboard state to history
+      history.pushState({ page: 'dashboard', isBotView: isBotView }, "Dashboard", "#dashboard");
+    }
+
+    function openDashboard(isBotView) {
+      showChatbot();
+      toggleDashboard(isBotView);
+    }
+
+    function startNow() {
+      introPage.style.display = "none";
+      header.style.display = "block";
+      startDetection();
+      createHeartAnimation();
+      // Push initial state to history
+      history.pushState({ page: 'webcam' }, "Webcam Detection", "#webcam");
+    }
+
+    function openGame(url) {
+      // Store the current state before navigating
+      const state = { page: 'game', returnTo: 'dashboard', isBotView: isBotView };
+      history.pushState(state, "Game", `#game-${url}`);
+      window.location.href = url; // Navigate to the game page in the same tab
+    }
+
+    // Handle back button navigation
+    window.addEventListener('popstate', (event) => {
+      const state = event.state;
+      if (state && state.page === 'dashboard') {
+        // Reopen the dashboard
+        dashboardMenu.classList.add("open");
+        dashboardMenu.setAttribute("aria-hidden", "false");
+        dashboardBtn.style.display = "none";
+        botDashboardBtn.style.display = state.isBotView ? "none" : "block";
+        if (state.isBotView) {
+          showChatbot();
+        } else {
+          chatbotContainer.style.display = "none";
+          webcamContainer.style.display = "none";
+          header.style.display = "none";
+          resultScreen.style.display = "none";
+          emotionText.style.display = "none";
+          notify.style.display = "none";
+          spinner.style.display = "none";
+        }
+      } else if (state && state.page === 'webcam') {
+        // Return to webcam detection
+        introPage.style.display = "none";
+        header.style.display = "block";
+        startDetection();
+      } else {
+        // Default to intro page if no state
+        introPage.style.display = "flex";
+        header.style.display = "none";
+        webcamContainer.style.display = "none";
+        chatbotContainer.style.display = "none";
+        dashboardMenu.classList.remove("open");
+      }
+    });
+
+    dashboardBtn.addEventListener("click", () => toggleDashboard(false));
+    botDashboardBtn.addEventListener("click", () => toggleDashboard(true));
+
+    closeDashboard.addEventListener("click", () => {
+      dashboardMenu.classList.remove("open");
+      dashboardMenu.setAttribute("aria-hidden", "true");
+      createHeartAnimation();
+      // Return to the appropriate view based on isBotView
+      if (isBotView) {
+        // Show the chatbot view
+        showChatbot();
+        botDashboardBtn.style.display = "block";
+        dashboardBtn.style.display = "none";
+      } else {
+        // Show the webcam detection view
+        webcamContainer.style.display = "flex";
+        emotionText.style.display = "block";
+        notify.style.display = "none";
+        spinner.style.display = detected ? "none" : "block";
+        resultScreen.style.display = detected ? "flex" : "none";
+        header.style.display = "block";
+        chatbotContainer.style.display = "none";
+        dashboardBtn.style.display = detected ? "block" : "none";
+        botDashboardBtn.style.display = "none";
+        restartBtn.style.display = detected ? "block" : "none";
+        if (!detected) {
+          startDetection();
+        }
+      }
+    });
+
+    openDrawingBtn.addEventListener("click", () => {
+      openGame("./drawing.html");
+      createHeartAnimation();
+    });
+
+    openCatchStarsBtn.addEventListener("click", () => {
+      openGame("./game1.html");
+      createHeartAnimation();
+    });
+
+    openPongBtn.addEventListener("click", () => {
+      openGame("./game2.html");
+      createHeartAnimation();
+    });
+
+    openBreathingBtn.addEventListener("click", () => {
+      openGame("./breathing.html");
+      createHeartAnimation();
+    });
+
+    openGratitudeBtn.addEventListener("click", () => {
+      openGame("./gratitude.html");
+      createHeartAnimation();
+    });
+
+    openMusicBtn.addEventListener("click", () => {
+      openGame("./music.html");
+      createHeartAnimation();
+    });
+
+    openQuizBtn.addEventListener("click", () => {
+      openGame("./quiz.html");
+      createHeartAnimation();
+    });
+
+    openFunQuizBtn.addEventListener("click", () => {
+      openGame("./question.html");
+      createHeartAnimation();
+    });
+
+    restartBtn.addEventListener("click", () => {
+      hideChatbot();
+      createOrbAnimation();
+    });
+
+    startNowBtn.addEventListener("click", startNow);
+    startNowBtn.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        startNow();
+      }
+    });
+
+    document.querySelectorAll('.card').forEach(card => {
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          card.click();
+        }
+      });
+    });
+
+    window.showChatbot = showChatbot;
+    window.openDashboard = openDashboard;
+    window.hideChatbot = hideChatbot;
+
+    // Initialize model and webcam on page load
+    init();
+
+    // Check initial URL hash to restore state
+    window.addEventListener('load', () => {
+      if (window.location.hash === '#dashboard') {
+        toggleDashboard(isBotView);
+      }
+    });
+  </script>
+</body>
+</html>

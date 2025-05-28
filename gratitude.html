@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gratitude Journal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&family=Lora:wght@400;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Roboto', sans-serif;
+      background: linear-gradient(135deg, #b3e5fc, #c8e6c9);
+      color: #333;
+      padding: 20px;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, #b3e5fc, #c8e6c9, #b3e5fc);
+      background-size: 200%;
+      opacity: 0.2;
+      animation: wave 15s infinite linear;
+      z-index: -1;
+    }
+    h1 {
+      font-family: 'Playfair Display', serif;
+      color: #2e7d32;
+      font-size: 36px;
+      text-align: center;
+      margin: 20px 0;
+      text-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+    }
+    #gratitudeForm {
+      max-width: 600px;
+      margin: 20px auto;
+      background: rgba(255, 248, 225, 0.8);
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+      padding: 20px;
+      border-radius: 15px;
+      border: 2px solid #81c784;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+    #gratitudePrompt {
+      font-family: 'Lora', serif;
+      color: #2e7d32;
+      font-size: 18px;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+    select, textarea {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border: 2px solid #81c784;
+      border-radius: 8px;
+      font-size: 16px;
+      background: #f5f5f5;
+      color: #333;
+    }
+    textarea {
+      height: 120px;
+      resize: none;
+    }
+    textarea:focus, select:focus {
+      outline: none;
+      border-color: #4caf50;
+      box-shadow: 0 0 8px rgba(76, 175, 80, 0.3);
+    }
+    .form-actions {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+    }
+    button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    }
+    button:focus {
+      outline: 3px solid #ffca28;
+    }
+    .save-btn {
+      background: linear-gradient(45deg, #4caf50, #388e3c);
+      color: white;
+    }
+    .toggle-btn {
+      background: linear-gradient(45deg, #4fc3f7, #0288d1);
+      color: white;
+    }
+    #backBtn {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      background: linear-gradient(45deg, #0288d1, #01579b);
+      z-index: 10;
+      padding: 8px 16px;
+      font-size: 14px;
+      color: white;
+    }
+    #backBtn:hover {
+      box-shadow: 0 5px 15px rgba(2, 136, 209, 0.5);
+    }
+    #wordCount {
+      font-size: 14px;
+      color: #555;
+      text-align: right;
+      margin-top: 5px;
+    }
+    #entries {
+      max-width: 600px;
+      margin: 20px auto;
+      display: none;
+    }
+    .entry {
+      background: rgba(255, 248, 225, 0.8);
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+      border: 2px solid #81c784;
+      border-radius: 12px;
+      padding: 15px;
+      margin: 10px 0;
+      transition: transform 0.3s ease;
+    }
+    .entry:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 20px rgba(76, 175, 80, 0.3);
+    }
+    .entry-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .entry strong {
+      font-family: 'Lora', serif;
+      color: #2e7d32;
+      font-size: 16px;
+    }
+    .entry p {
+      font-size: 16px;
+      color: #333;
+    }
+    .entry .prompt {
+      font-style: italic;
+      color: #4fc3f7;
+      font-size: 14px;
+      margin-bottom: 5px;
+    }
+    .delete-btn {
+      background: #d32f2f;
+      color: white;
+      padding: 5px 10px;
+      font-size: 14px;
+    }
+    @keyframes wave {
+      0% { background-position: 0 0; }
+      100% { background-position: 200% 0; }
+    }
+    @media (max-width: 600px) {
+      h1 { font-size: 28px; }
+      #gratitudeForm, #entries { padding: 15px; }
+      textarea, select { font-size: 14px; }
+      button { font-size: 14px; padding: 8px 16px; }
+      #backBtn { padding: 6px 12px; font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <button id="backBtn" aria-label="Return to dashboard">Back</button>
+  <h1>🌿 Gratitude Journal 🌼</h1>
+  <div id="gratitudeForm" role="form" aria-label="Gratitude Entry Form">
+    <p id="gratitudePrompt">What are you grateful for today?</p>
+    <select id="promptSelect" aria-label="Select gratitude prompt">
+      <option value="What are you grateful for today?">General Gratitude</option>
+      <option value="Who made a positive impact in your life today?">Relationships</option>
+      <option value="What’s a small moment of joy you experienced?">Small Moments</option>
+      <option value="What about your health are you thankful for?">Health</option>
+      <option value="What in nature inspired you today?">Nature</option>
+    </select>
+    <textarea id="gratitudeInput" placeholder="Write your thoughts here..." aria-label="Gratitude entry"></textarea>
+    <div id="wordCount">0 / 500 words</div>
+    <div class="form-actions">
+      <button class="save-btn" onclick="saveEntry()">Save Entry</button>
+      <button class="toggle-btn" onclick="toggleEntries()">Show Past Entries</button>
+    </div>
+  </div>
+  <div id="entries" role="region" aria-label="Past Gratitude Entries"></div>
+  <script>
+    const gratitudeInput = document.getElementById("gratitudeInput");
+    const promptSelect = document.getElementById("promptSelect");
+    const entriesDiv = document.getElementById("entries");
+    const wordCountDiv = document.getElementById("wordCount");
+    const backBtn = document.getElementById("backBtn");
+    let entries = JSON.parse(localStorage.getItem("gratitudeEntries")) || [];
+
+    function createHeartAnimation() {
+      for (let i = 0; i < 3; i++) {
+        let heart = document.createElement('div');
+        heart.className = 'chibi-heart';
+        heart.style.left = Math.random() * window.innerWidth + 'px';
+        heart.style.top = window.innerHeight - 100 + 'px';
+        document.body.appendChild(heart);
+        setTimeout(() => heart.remove(), 2000);
+      }
+    }
+
+    function goBack() {
+      createHeartAnimation();
+      // Navigate back to index.html with the dashboard hash
+      window.location.href = './index.html#dashboard';
+    }
+
+    function saveEntry() {
+      const text = gratitudeInput.value.trim();
+      const prompt = promptSelect.value;
+      if (text) {
+        const entry = {
+          text,
+          prompt,
+          timestamp: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })
+        };
+        entries.push(entry);
+        localStorage.setItem("gratitudeEntries", JSON.stringify(entries));
+        gratitudeInput.value = "";
+        wordCountDiv.textContent = "0 / 500 words";
+        alert("Entry saved!");
+        displayEntries();
+      } else {
+        alert("Please write something to save.");
+      }
+    }
+
+    function displayEntries() {
+      entriesDiv.innerHTML = "";
+      entries.forEach((entry, index) => {
+        const div = document.createElement("div");
+        div.className = "entry";
+        div.innerHTML = `
+          <div class="entry-header">
+            <strong>${entry.timestamp}</strong>
+            <button class="delete-btn" onclick="deleteEntry(${index})" aria-label="Delete entry">Delete</button>
+          </div>
+          <p class="prompt">${entry.prompt}</p>
+          <p>${entry.text}</p>
+        `;
+        entriesDiv.prepend(div);
+      });
+    }
+
+    function deleteEntry(index) {
+      if (confirm("Are you sure you want to delete this entry?")) {
+        entries.splice(index, 1);
+        localStorage.setItem("gratitudeEntries", JSON.stringify(entries));
+        displayEntries();
+      }
+    }
+
+    function toggleEntries() {
+      entriesDiv.style.display = entriesDiv.style.display === "none" ? "block" : "none";
+    }
+
+    function updatePrompt() {
+      document.getElementById("gratitudePrompt").textContent = promptSelect.value;
+    }
+
+    function updateWordCount() {
+      const words = gratitudeInput.value.trim().split(/\s+/).filter(word => word).length;
+      wordCountDiv.textContent = `${words} / 500 words`;
+      if (words > 500) {
+        wordCountDiv.style.color = "#d32f2f";
+      } else {
+        wordCountDiv.style.color = "#555";
+      }
+    }
+
+    promptSelect.addEventListener("change", updatePrompt);
+    gratitudeInput.addEventListener("input", updateWordCount);
+    backBtn.addEventListener("click", goBack);
+    backBtn.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        goBack();
+      }
+    });
+
+    displayEntries();
+  </script>
+</body>
+</html>
