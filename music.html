@@ -1,15 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Akshzz Music</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+  <link
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+    rel="stylesheet"
+  />
   <style>
     body {
       background: linear-gradient(to bottom, #f9a8d4, #c4b5fd);
-      font-family: 'Arial', sans-serif;
+      font-family: "Arial", sans-serif;
       color: #1e293b;
       overflow: hidden;
     }
@@ -41,7 +44,7 @@
       position: fixed;
       width: 20px;
       height: 20px;
-      background: url('https://img.icons8.com/emoji/48/000000/heart-suit.png');
+      background: url("https://img.icons8.com/emoji/48/000000/heart-suit.png");
       background-size: cover;
       animation: float 2s ease-in-out forwards;
       pointer-events: none;
@@ -69,13 +72,18 @@
       box-shadow: 0 4px 20px rgba(249, 168, 212, 0.6);
     }
     .song-card::before {
-      content: '';
+      content: "";
       position: absolute;
       top: 0;
       left: -100%;
       width: 100%;
       height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(103, 232, 249, 0.3), transparent);
+      background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(103, 232, 249, 0.3),
+        transparent
+      );
       transition: 0.5s;
     }
     .song-card:hover::before {
@@ -84,7 +92,7 @@
     .spinner {
       width: 40px;
       height: 40px;
-      background: url('https://img.icons8.com/emoji/48/000000/robot.png');
+      background: url("https://img.icons8.com/emoji/48/000000/robot.png");
       background-size: cover;
       animation: spin 1s linear infinite;
       margin: 0 auto;
@@ -93,7 +101,8 @@
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
-    button:focus, input:focus {
+    button:focus,
+    input:focus {
       outline: 3px solid #67e8f9;
       outline-offset: 2px;
     }
@@ -107,7 +116,7 @@
       background: #e5e7eb;
       border-radius: 3px;
       outline: none;
-      cursor: pointer;
+      cursor: not-allowed; /* Option A me slider sirf decoration hai */
     }
     #progressSlider::-webkit-slider-thumb {
       appearance: none;
@@ -116,7 +125,7 @@
       background: #67e8f9;
       border-radius: 50%;
       box-shadow: 0 0 8px rgba(103, 232, 249, 0.5);
-      cursor: pointer;
+      cursor: not-allowed;
     }
     #progressSlider::-moz-range-thumb {
       width: 12px;
@@ -125,7 +134,11 @@
       border-radius: 50%;
       box-shadow: 0 0 8px rgba(103, 232, 249, 0.5);
       border: none;
-      cursor: pointer;
+      cursor: not-allowed;
+    }
+    .time-display {
+      opacity: 0.6;
+      font-size: 0.8rem;
     }
     @media (max-width: 768px) {
       .songs { grid-template-columns: 1fr; }
@@ -133,15 +146,14 @@
       .header-container { padding: 0.5rem; }
       .player-bar { flex-direction: column; gap: 0.5rem; }
       #progressSlider { width: 100%; }
-      .time-display { font-size: 0.8rem; }
+      .time-display { font-size: 0.75rem; }
     }
   </style>
 </head>
 <body class="flex flex-col h-screen">
-
   <!-- Back Button -->
   <div class="flex flex-col sm:flex-row gap-4 m-4">
-    <button id="backBtn" class="ai-btn text-white px-4 py-2 rounded-lg" aria-label="Back to dashboard">
+    <button id="backBtn" class="ai-btn text-white px-4 py-2 rounded-lg">
       Back
     </button>
   </div>
@@ -154,61 +166,68 @@
   <!-- Main Content -->
   <div class="flex-1 p-6 overflow-y-auto">
     <div class="flex justify-between mb-4">
-      <input id="searchInput" type="text"
-             placeholder="Search Arijit, 90s Bollywood, or romantic songs..."
-             class="w-3/4 p-3 rounded-lg border border-cyan-300 focus:outline-none"
-             aria-label="Search songs">
-      <button id="createPlaylist" class="ai-btn text-white px-4 py-2 rounded-full hover:bg-cyan-600"
-              aria-label="Create new playlist">
+      <input
+        id="searchInput"
+        type="text"
+        placeholder="Search Arijit, 90s Bollywood, or romantic songs..."
+        class="w-3/4 p-3 rounded-lg border border-cyan-300 focus:outline-none"
+      />
+      <button
+        id="createPlaylist"
+        class="ai-btn text-white px-4 py-2 rounded-full hover:bg-cyan-600"
+      >
         <i class="fas fa-plus mr-2"></i>New Playlist
       </button>
     </div>
 
-    <div id="playlists" class="mb-4" role="list" aria-label="Playlists"></div>
-    <div id="songs" class="songs grid grid-cols-3 gap-4" role="list" aria-label="Songs"></div>
+    <div id="playlists" class="mb-4"></div>
+    <div id="songs" class="songs grid grid-cols-3 gap-4"></div>
   </div>
 
   <!-- Player Bar -->
-  <div class="player-bar fixed bottom-0 w-full p-4 flex flex-col items-center justify-between">
-    <audio id="audioPlayer" class="hidden"></audio>
+  <div
+    class="player-bar fixed bottom-0 w-full p-4 flex flex-col items-center justify-between"
+  >
+    <!-- YouTube embed player (yahi se music चलेगा) -->
     <div class="w-full flex items-center justify-between mb-2">
       <div class="flex items-center space-x-4">
-        <img id="songImage" src="https://via.placeholder.com/50" alt="Song image" class="w-12 h-12 rounded-lg">
+        <img
+          id="songImage"
+          src="https://via.placeholder.com/50"
+          alt="Song image"
+          class="w-12 h-12 rounded-lg"
+        />
         <div>
           <p id="songName" class="font-bold text-cyan-500">No song playing</p>
           <p id="songArtist" class="text-sm text-gray-700">Pick a song</p>
         </div>
       </div>
 
+      <!-- YouTube player chota sa right side me -->
       <div class="flex items-center space-x-2">
-        <button id="prevBtn" class="bg-cyan-400 text-white px-3 py-2 rounded-full hover:bg-cyan-500"
-                aria-label="Previous song">
-          <i class="fas fa-backward"></i>
-        </button>
-        <button id="playBtn" class="bg-pink-400 text-white px-4 py-2 rounded-full hover:bg-pink-500"
-                aria-label="Play song">
-          <i class="fas fa-play"></i>
-        </button>
-        <button id="pauseBtn" class="bg-purple-400 text-white px-4 py-2 rounded-full hover:bg-purple-500 hidden"
-                aria-label="Pause song">
-          <i class="fas fa-pause"></i>
-        </button>
-        <button id="nextBtn" class="bg-cyan-400 text-white px-3 py-2 rounded-full hover:bg-cyan-500"
-                aria-label="Next song">
-          <i class="fas fa-forward"></i>
-        </button>
-        <button id="favoriteBtn" class="text-pink-400 hover:text-pink-500"
-                aria-label="Add to favorites">
-          <i class="fas fa-heart"></i>
-        </button>
-        <input id="volumeSlider" type="range" min="0" max="100" value="50"
-               class="w-16 accent-cyan-400" aria-label="Adjust volume">
+        <iframe
+          id="ytFrame"
+          class="w-64 h-32 rounded-xl border border-pink-200 shadow-md hidden sm:block"
+          src=""
+          title="YouTube player"
+          frameborder="0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowfullscreen
+        ></iframe>
       </div>
     </div>
 
+    <!-- Neeche pseudo progress (sirf UI ke liye) -->
     <div class="w-full flex flex-col items-center">
-      <input id="progressSlider" type="range" min="0" max="100" value="0" class="w-full"
-             aria-label="Seek song progress">
+      <input
+        id="progressSlider"
+        type="range"
+        min="0"
+        max="100"
+        value="0"
+        class="w-full"
+        disabled
+      />
       <div class="time-display text-sm text-gray-700">
         <span id="currentTime">0:00</span> / <span id="durationTime">0:00</span>
       </div>
@@ -216,89 +235,106 @@
   </div>
 
   <script>
-    // ---------- ELEMENTS ----------
-    const audioPlayer = document.getElementById('audioPlayer');
-    const searchInput = document.getElementById('searchInput');
-    const songsDiv = document.getElementById('songs');
-    const playlistsDiv = document.getElementById('playlists');
-    const playBtn = document.getElementById('playBtn');
-    const pauseBtn = document.getElementById('pauseBtn');
-    const prevBtn = document.getElementById('prevBtn');
-    const nextBtn = document.getElementById('nextBtn');
-    const favoriteBtn = document.getElementById('favoriteBtn');
-    const createPlaylistBtn = document.getElementById('createPlaylist');
-    const volumeSlider = document.getElementById('volumeSlider');
-    const progressSlider = document.getElementById('progressSlider');
-    const currentTimeDisplay = document.getElementById('currentTime');
-    const durationTimeDisplay = document.getElementById('durationTime');
-    const songName = document.getElementById('songName');
-    const songArtist = document.getElementById('songArtist');
-    const songImage = document.getElementById('songImage');
-    const backBtn = document.getElementById('backBtn');
+    // ======== DOM ELEMENTS ========
+    const searchInput = document.getElementById("searchInput");
+    const songsDiv = document.getElementById("songs");
+    const playlistsDiv = document.getElementById("playlists");
+    const songName = document.getElementById("songName");
+    const songArtist = document.getElementById("songArtist");
+    const songImage = document.getElementById("songImage");
+    const ytFrame = document.getElementById("ytFrame");
+    const backBtn = document.getElementById("backBtn");
+    const createPlaylistBtn = document.getElementById("createPlaylist");
 
-    // ---------- STATE ----------
-    let currentSong = null;
-    let currentPlaylist = null;
+    // ======== STATIC BOLLYWOOD SONG DATA (YOUTUBE) ========
+   const songsData = [
+  
+  { id: 1, title: "Dil Diyan Gallan", artist: "Atif Aslam", youtubeId: "SAcpESN_Fk4", thumbnail: "https://img.youtube.com/vi/SAcpESN_Fk4/hqdefault.jpg" },
+
+  { id: 2, title: "Raatan Lambiyan", artist: "Jubin Nautiyal", youtubeId: "gvyUuxdRdR4", thumbnail: "https://img.youtube.com/vi/gvyUuxdRdR4/hqdefault.jpg" },
+
+  { id: 3, title: "Shape of You", artist: "Ed Sheeran", youtubeId: "JGwWNGJdvx8", thumbnail: "https://img.youtube.com/vi/JGwWNGJdvx8/hqdefault.jpg" },
+
+  { id: 4, title: "Night Changes", artist: "One Direction", youtubeId: "syFZfO_wfMQ", thumbnail: "https://img.youtube.com/vi/syFZfO_wfMQ/hqdefault.jpg" },
+
+  { id: 5, title: "Let Me Down Slowly", artist: "Alec Benjamin", youtubeId: "50VNCymT-Cs", thumbnail: "https://img.youtube.com/vi/50VNCymT-Cs/hqdefault.jpg" },
+
+  { id: 6, title: "Until I Found You", artist: "Stephen Sanchez", youtubeId: "GxldQ9eX2wo", thumbnail: "https://img.youtube.com/vi/GxldQ9eX2wo/hqdefault.jpg" },
+
+  { id: 7, title: "O Meri Laila", artist: "Atif Aslam", youtubeId: "7ZJjvZqZ-TE", thumbnail: "https://img.youtube.com/vi/7ZJjvZqZ-TE/hqdefault.jpg" },
+
+  { id: 8, title: "Hawayein", artist: "Arijit Singh", youtubeId: "cYOB941gyXI", thumbnail: "https://img.youtube.com/vi/cYOB941gyXI/hqdefault.jpg" },
+
+  { id: 9, title: "Khairiyat", artist: "Arijit Singh", youtubeId: "hoNb6HuNmU0", thumbnail: "https://img.youtube.com/vi/hoNb6HuNmU0/hqdefault.jpg" },
+
+  { id: 10, title: "Pee Loon", artist: "Mohit Chauhan", youtubeId: "3tUh-x-fp8Q", thumbnail: "https://img.youtube.com/vi/3tUh-x-fp8Q/hqdefault.jpg" },
+
+  { id: 11, title: "Love Me Like You Do", artist: "Ellie Goulding", youtubeId: "AJtDXIazrMo", thumbnail: "https://img.youtube.com/vi/AJtDXIazrMo/hqdefault.jpg" },
+
+  { id: 12, title: "Girls Like You", artist: "Maroon 5", youtubeId: "aJOTlE1K90k", thumbnail: "https://img.youtube.com/vi/aJOTlE1K90k/hqdefault.jpg" },
+
+  { id: 13, title: "Memories", artist: "Maroon 5", youtubeId: "SlPhMPnQ58k", thumbnail: "https://img.youtube.com/vi/SlPhMPnQ58k/hqdefault.jpg" },
+
+  { id: 14, title: "Attention", artist: "Charlie Puth", youtubeId: "nfs8NYg7yQM", thumbnail: "https://img.youtube.com/vi/nfs8NYg7yQM/hqdefault.jpg" },
+
+  { id: 15, title: "Despacito", artist: "Luis Fonsi", youtubeId: "kJQP7kiw5Fk", thumbnail: "https://img.youtube.com/vi/kJQP7kiw5Fk/hqdefault.jpg" },
+
+  { id: 16, title: "Choo Lo", artist: "The Local Train", youtubeId: "gtsuGkM1rH0", thumbnail: "https://img.youtube.com/vi/gtsuGkM1rH0/hqdefault.jpg" },
+
+  { id: 17, title: "Baarishein", artist: "Anuv Jain", youtubeId: "U6LZih4gG0A", thumbnail: "https://img.youtube.com/vi/U6LZih4gG0A/hqdefault.jpg" },
+
+  { id: 18, title: "Husn", artist: "Anuv Jain", youtubeId: "tJDBGXWmQJw", thumbnail: "https://img.youtube.com/vi/tJDBGXWmQJw/hqdefault.jpg" },
+
+  { id: 19, title: "Heeriye", artist: "Jasleen Royal", youtubeId: "p9Z6g590uT0", thumbnail: "https://img.youtube.com/vi/p9Z6g590uT0/hqdefault.jpg" },
+
+  { id: 20, title: "Saibo", artist: "Shreya Ghoshal", youtubeId: "zYFz6Zsgd2I", thumbnail: "https://img.youtube.com/vi/zYFz6Zsgd2I/hqdefault.jpg" },
+
+  { id: 21, title: "I Like Me Better", artist: "Lauv", youtubeId: "DWcJFNfaw9c", thumbnail: "https://img.youtube.com/vi/DWcJFNfaw9c/hqdefault.jpg" },
+
+  { id: 22, title: "Faded", artist: "Alan Walker", youtubeId: "60ItHLz5WEA", thumbnail: "https://img.youtube.com/vi/60ItHLz5WEA/hqdefault.jpg" },
+
+  { id: 23, title: "On My Way", artist: "Alan Walker", youtubeId: "dhYOPzcsbGM", thumbnail: "https://img.youtube.com/vi/dhYOPzcsbGM/hqdefault.jpg" },
+
+  { id: 24, title: "Sugar", artist: "Maroon 5", youtubeId: "09R8_2nJtjg", thumbnail: "https://img.youtube.com/vi/09R8_2nJtjg/hqdefault.jpg" },
+
+  { id: 25, title: "We Don't Talk Anymore", artist: "Charlie Puth", youtubeId: "3AtDnEC4zak", thumbnail: "https://img.youtube.com/vi/3AtDnEC4zak/hqdefault.jpg" },
+
+];
+
+
+    // ======== STATE ========
     let currentSongIndex = -1;
-    let favorites = JSON.parse(localStorage.getItem('akshzzFavorites')) || [];
-    let playlists = JSON.parse(localStorage.getItem('akshzzPlaylists')) || [
-      { name: 'Diwali Beats', songs: [], timestamp: new Date().toLocaleString('en-IN') },
-      { name: 'Chill Vibes', songs: [], timestamp: new Date().toLocaleString('en-IN') }
-    ];
+    let favorites =
+      JSON.parse(localStorage.getItem("akshzzFavoritesYT_A")) || [];
+    let playlists =
+      JSON.parse(localStorage.getItem("akshzzPlaylistsYT_A")) || [
+        {
+          name: "Diwali Beats",
+          songIds: [1, 3, 8],
+          timestamp: new Date().toLocaleString("en-IN", {
+            timeZone: "Asia/Kolkata",
+          }),
+        },
+        {
+          name: "Chill Vibes",
+          songIds: [2, 4, 5, 6],
+          timestamp: new Date().toLocaleString("en-IN", {
+            timeZone: "Asia/Kolkata",
+          }),
+        },
+      ];
 
-    // ---------- LOCAL SONG DATA (NO API) ----------
-    // Demo songs (free sample mp3). Naam tum Bollywood type rakh sakti ho.
-    const songsData = [
-      {
-        id: '1',
-        name: 'Bollywood Vibes - Tum Jo Mile',
-        primaryArtists: 'Demo Arijit',
-        image: 'https://via.placeholder.com/300x300.png?text=Tum+Jo+Mile',
-        url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'
-      },
-      {
-        id: '2',
-        name: 'LoFi Ishq',
-        primaryArtists: 'Demo Jubin',
-        image: 'https://via.placeholder.com/300x300.png?text=LoFi+Ishq',
-        url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3'
-      },
-      {
-        id: '3',
-        name: 'Rainy Day Romance',
-        primaryArtists: 'Demo Shreya',
-        image: 'https://via.placeholder.com/300x300.png?text=Rainy+Romance',
-        url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3'
-      },
-      {
-        id: '4',
-        name: '90s Throwback',
-        primaryArtists: 'Demo Kumar Sanu',
-        image: 'https://via.placeholder.com/300x300.png?text=90s+Throwback',
-        url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3'
-      },
-      {
-        id: '5',
-        name: 'Party Mashup',
-        primaryArtists: 'Demo Neha',
-        image: 'https://via.placeholder.com/300x300.png?text=Party+Mashup',
-        url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3'
-      }
-    ];
-
-    // ---------- UTILS ----------
-    function formatTime(seconds) {
-      const minutes = Math.floor(seconds / 60);
-      const secs = Math.floor(seconds % 60);
-      return `${minutes}:${secs < 10 ? '0' : ''}${secs}`;
+    function savePlaylists() {
+      localStorage.setItem("akshzzPlaylistsYT_A", JSON.stringify(playlists));
     }
 
+    // ======== LITTLE ANIMATIONS ========
     function createOrbAnimation() {
       for (let i = 0; i < 5; i++) {
-        let orb = document.createElement('div');
-        orb.className = 'ai-orb';
-        orb.style.left = Math.random() * window.innerWidth + 'px';
-        orb.style.top = window.innerHeight - 100 + 'px';
+        const orb = document.createElement("div");
+        orb.className = "ai-orb";
+        orb.style.left = Math.random() * window.innerWidth + "px";
+        orb.style.top = window.innerHeight - 100 + "px";
         document.body.appendChild(orb);
         setTimeout(() => orb.remove(), 3000);
       }
@@ -306,188 +342,86 @@
 
     function createHeartAnimation() {
       for (let i = 0; i < 3; i++) {
-        let heart = document.createElement('div');
-        heart.className = 'chibi-heart';
-        heart.style.left = Math.random() * window.innerWidth + 'px';
-        heart.style.top = window.innerHeight - 100 + 'px';
+        const heart = document.createElement("div");
+        heart.className = "chibi-heart";
+        heart.style.left = Math.random() * window.innerWidth + "px";
+        heart.style.top = window.innerHeight - 100 + "px";
         document.body.appendChild(heart);
         setTimeout(() => heart.remove(), 2000);
       }
     }
 
-    // ---------- RENDER SONGS ----------
-    function displaySongs(list) {
-      songsDiv.innerHTML = '';
-      if (!list.length) {
-        songsDiv.innerHTML = '<p class="text-cyan-600 col-span-3">No songs found. Try another search.</p>';
+    // ======== RENDER SONG CARDS ========
+    function renderSongs(list) {
+      songsDiv.innerHTML = "";
+      if (!list || list.length === 0) {
+        songsDiv.innerHTML =
+          '<p class="text-red-500">No songs found. Try another search!</p>';
         return;
       }
 
-      list.forEach((song, index) => {
-        const card = document.createElement('div');
-        card.className = 'song-card bg-white p-4 rounded-lg shadow cursor-pointer';
+      list.forEach((song) => {
+        const card = document.createElement("div");
+        card.className =
+          "song-card bg-white p-4 rounded-lg shadow cursor-pointer flex flex-col";
         card.innerHTML = `
-          <img src="${song.image}" alt="${song.name}"
-               class="w-full h-32 object-cover rounded mb-2">
-          <p class="font-bold text-cyan-500 truncate">${song.name}</p>
-          <p class="text-sm text-gray-700 truncate">${song.primaryArtists || 'Unknown'}</p>
-          <button class="text-pink-400 hover:text-pink-500 mt-2"
-                  aria-label="Add ${song.name} to playlist">
+          <img src="${song.thumbnail}" alt="${
+          song.title
+        }" class="w-full h-32 object-cover rounded mb-2" />
+          <p class="font-bold text-cyan-500">${song.title}</p>
+          <p class="text-sm text-gray-700 mb-2">${song.artist}</p>
+          <button class="text-pink-400 hover:text-pink-500 mt-auto add-btn">
             <i class="fas fa-plus"></i>
           </button>
         `;
 
-        // Play on card click
-        card.addEventListener('click', (e) => {
-          // plus button pe click kare to playlist popup khule, song na play ho
-          if (e.target.closest('button')) return;
-          playSongFromList(list, index);
+        // Card click -> play
+        card.addEventListener("click", (e) => {
+          if (e.target.closest(".add-btn")) return;
+          const idx = songsData.findIndex((s) => s.id === song.id);
+          playSongByIndex(idx);
         });
 
-        // plus button ⇒ add to playlist
-        const plusBtn = card.querySelector('button');
-        plusBtn.addEventListener('click', () => {
-          addToPlaylist(song);
+        // Add to playlist
+        const addBtn = card.querySelector(".add-btn");
+        addBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          addToPlaylist(song.id);
         });
 
         songsDiv.appendChild(card);
       });
     }
 
-    // ---------- PLAY SONG ----------
-    function playSong(song, playlist = null, index = -1) {
-      currentSong = song;
-      currentPlaylist = playlist;
-      currentSongIndex = index;
-
-      audioPlayer.src = song.url;
-      audioPlayer.play().catch(() => {
-        alert('First interact with the page (click anywhere), then press play again!');
-      });
-
-      songName.textContent = song.name;
-      songArtist.textContent = song.primaryArtists || 'Unknown';
-      songImage.src = song.image || 'https://via.placeholder.com/50';
-
-      playBtn.classList.add('hidden');
-      pauseBtn.classList.remove('hidden');
-      createOrbAnimation();
-
-      // favorite icon state
-      const isFav = favorites.some(f => f.id === song.id);
-      favoriteBtn.classList.toggle('text-red-500', isFav);
-
-      progressSlider.value = 0;
-      currentTimeDisplay.textContent = '0:00';
-      durationTimeDisplay.textContent = '0:00';
-    }
-
-    function playSongFromList(list, index) {
-      const song = list[index];
-      playSong(song, { songs: list }, index);
-    }
-
-    // ---------- PLAYER CONTROLS ----------
-    playBtn.addEventListener('click', () => {
-      if (currentSong) {
-        audioPlayer.play();
-        playBtn.classList.add('hidden');
-        pauseBtn.classList.remove('hidden');
-        createOrbAnimation();
-      }
-    });
-
-    pauseBtn.addEventListener('click', () => {
-      audioPlayer.pause();
-      playBtn.classList.remove('hidden');
-      pauseBtn.classList.add('hidden');
-    });
-
-    prevBtn.addEventListener('click', () => {
-      if (currentPlaylist && currentSongIndex > 0) {
-        currentSongIndex--;
-        playSong(currentPlaylist.songs[currentSongIndex], currentPlaylist, currentSongIndex);
-      }
-    });
-
-    nextBtn.addEventListener('click', () => {
-      if (currentPlaylist && currentSongIndex < currentPlaylist.songs.length - 1) {
-        currentSongIndex++;
-        playSong(currentPlaylist.songs[currentSongIndex], currentPlaylist, currentSongIndex);
-      }
-    });
-
-    audioPlayer.addEventListener('timeupdate', () => {
-      if (audioPlayer.duration) {
-        const progress = (audioPlayer.currentTime / audioPlayer.duration) * 100;
-        progressSlider.value = progress;
-        currentTimeDisplay.textContent = formatTime(audioPlayer.currentTime);
-        durationTimeDisplay.textContent = formatTime(audioPlayer.duration);
-      }
-    });
-
-    progressSlider.addEventListener('input', () => {
-      if (audioPlayer.duration) {
-        const seekTime = (progressSlider.value / 100) * audioPlayer.duration;
-        audioPlayer.currentTime = seekTime;
-      }
-    });
-
-    volumeSlider.addEventListener('input', () => {
-      audioPlayer.volume = volumeSlider.value / 100;
-    });
-
-    // ---------- FAVORITES ----------
-    favoriteBtn.addEventListener('click', () => {
-      if (!currentSong) return;
-      const isFavorite = favorites.some(f => f.id === currentSong.id);
-      if (isFavorite) {
-        favorites = favorites.filter(f => f.id !== currentSong.id);
-      } else {
-        favorites.push({
-          id: currentSong.id,
-          name: currentSong.name,
-          url: currentSong.url,
-          image: currentSong.image,
-          artists: currentSong.primaryArtists,
-          timestamp: new Date().toLocaleString('en-IN')
-        });
-        createHeartAnimation();
-      }
-      localStorage.setItem('akshzzFavorites', JSON.stringify(favorites));
-      favoriteBtn.classList.toggle('text-red-500', !isFavorite);
-    });
-
-    // ---------- PLAYLISTS ----------
-    function savePlaylists() {
-      localStorage.setItem('akshzzPlaylists', JSON.stringify(playlists));
-    }
-
+    // ======== PLAYLIST RENDER ========
     function loadPlaylists() {
-      playlistsDiv.innerHTML = '';
-      playlists.forEach((playlist, index) => {
-        const div = document.createElement('div');
-        div.className = 'p-2 hover:bg-cyan-100 rounded cursor-pointer flex justify-between items-center';
+      playlistsDiv.innerHTML = "";
+      playlists.forEach((playlist, idx) => {
+        const div = document.createElement("div");
+        div.className =
+          "p-2 hover:bg-cyan-100 rounded cursor-pointer flex justify-between items-center";
         div.innerHTML = `
           <p class="text-cyan-500">${playlist.name}</p>
-          <button class="text-red-400 hover:text-red-500" aria-label="Delete playlist ${playlist.name}">
+          <button class="text-red-400 hover:text-red-500 delete-btn">
             <i class="fas fa-trash"></i>
           </button>
         `;
 
-        // open playlist
-        div.addEventListener('click', (e) => {
-          if (e.target.closest('button')) return;
-          currentPlaylist = playlist;
-          currentSongIndex = -1;
-          displaySongs(playlist.songs);
+        // Open playlist
+        div.addEventListener("click", (e) => {
+          if (e.target.closest(".delete-btn")) return;
+          const list = playlist.songIds
+            .map((id) => songsData.find((s) => s.id === id))
+            .filter(Boolean);
+          renderSongs(list);
         });
 
-        // delete playlist
-        const delBtn = div.querySelector('button');
-        delBtn.addEventListener('click', () => {
-          if (confirm(`Delete ${playlist.name}?`)) {
-            playlists.splice(index, 1);
+        // Delete playlist
+        const deleteBtn = div.querySelector(".delete-btn");
+        deleteBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          if (confirm(`Delete playlist "${playlists[idx].name}"?`)) {
+            playlists.splice(idx, 1);
             savePlaylists();
             loadPlaylists();
           }
@@ -497,75 +431,103 @@
       });
     }
 
-    createPlaylistBtn.addEventListener('click', () => {
-      const name = prompt('Enter new playlist name (e.g., Party Masala):', `Playlist ${playlists.length + 1}`);
+    // ======== PLAY SONG (YouTube embed only) ========
+    function playSongByIndex(index) {
+      if (index < 0 || index >= songsData.length) return;
+      currentSongIndex = index;
+      const song = songsData[currentSongIndex];
+
+      // YouTube embed with autoplay
+      const url =
+        "https://www.youtube.com/embed/" +
+        song.youtubeId +
+        "?autoplay=1&rel=0&modestbranding=1";
+
+      ytFrame.src = url;
+      ytFrame.classList.remove("hidden");
+
+      songName.textContent = song.title;
+      songArtist.textContent = song.artist;
+      songImage.src = song.thumbnail;
+
+      createOrbAnimation();
+    }
+
+    // ======== SEARCH LOCAL ========
+    searchInput.addEventListener("input", () => {
+      const q = searchInput.value.toLowerCase();
+      const filtered = songsData.filter(
+        (s) =>
+          s.title.toLowerCase().includes(q) ||
+          s.artist.toLowerCase().includes(q)
+      );
+      renderSongs(filtered);
+    });
+
+    // ======== PLAYLIST CREATION ========
+    createPlaylistBtn.addEventListener("click", () => {
+      const name = prompt(
+        "Enter new playlist name (e.g., Party Masala):",
+        `Playlist ${playlists.length + 1}`
+      );
       if (name) {
         playlists.push({
           name,
-          songs: [],
-          timestamp: new Date().toLocaleString('en-IN')
+          songIds: [],
+          timestamp: new Date().toLocaleString("en-IN", {
+            timeZone: "Asia/Kolkata",
+          }),
         });
         savePlaylists();
         loadPlaylists();
       }
     });
 
-    function addToPlaylist(song) {
-      if (!playlists.length) {
-        alert('No playlist found. Create one first!');
+    function addToPlaylist(songId) {
+      if (playlists.length === 0) {
+        alert("No playlist found. Create one first!");
         return;
       }
       const playlistName = prompt(
-        `Add to which playlist?\nAvailable: ${playlists.map(p => p.name).join(', ')}`,
+        "Which playlist to add to?",
         playlists[0].name
       );
-      const playlist = playlists.find(p => p.name === playlistName);
-      if (playlist) {
-        // avoid duplicates
-        if (!playlist.songs.some(s => s.id === song.id)) {
-          playlist.songs.push(song);
-          savePlaylists();
-          alert(`${song.name} added to ${playlistName}!`);
-        } else {
-          alert('Song already in this playlist!');
-        }
-      } else if (playlistName) {
-        alert('Playlist not found.');
+      if (!playlistName) return;
+      const playlist = playlists.find((p) => p.name === playlistName);
+      if (!playlist) {
+        alert("Playlist not found!");
+        return;
+      }
+      if (!playlist.songIds.includes(songId)) {
+        playlist.songIds.push(songId);
+        savePlaylists();
+        alert("Song added to " + playlistName);
+      } else {
+        alert("Song already in this playlist!");
       }
     }
 
-    // ---------- SEARCH (LOCAL) ----------
-    searchInput.addEventListener('input', () => {
-      const query = searchInput.value.toLowerCase();
-      const filtered = songsData.filter(song =>
-        song.name.toLowerCase().includes(query) ||
-        (song.primaryArtists && song.primaryArtists.toLowerCase().includes(query))
-      );
-      displaySongs(filtered);
+    // ======== BACK BUTTON ========
+    backBtn.addEventListener("click", () => {
+      createHeartAnimation();
+      window.location.href = "./index.html#dashboard";
     });
 
-    // ---------- BACK BUTTON ----------
-    function goBack() {
-      createHeartAnimation();
-      if (audioPlayer) audioPlayer.pause();
-      // direct dashboard pe
-      window.location.href = './index.html#dashboard';
-    }
-    backBtn.addEventListener('click', goBack);
-
-    // Keyboard accessibility for all buttons
-    document.querySelectorAll('button').forEach(el => {
-      el.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
+    // Keyboard accessibility
+    document.querySelectorAll("button").forEach((el) => {
+      el.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
           el.click();
         }
       });
     });
 
-    // ---------- INIT ----------
-    displaySongs(songsData);
-    loadPlaylists();
+    // ======== INITIAL LOAD ========
+    window.addEventListener("load", () => {
+      renderSongs(songsData);
+      loadPlaylists();
+    });
   </script>
 </body>
 </html>
