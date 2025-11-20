@@ -69,7 +69,7 @@
     .spinner {
       width: 40px;
       height: 40px;
-      background: url('https://img.icons8.com/emoji/48/000000/robot.png');
+      background: url('https://img.icons8.com/emoji/48/robot-emoji.png');
       background-size: cover;
       animation: spin 1s linear infinite;
       margin: 0 auto;
@@ -130,20 +130,22 @@
     </div>
   </div>
 
-<!-- 🚀 THIS SCRIPT TAG HAS VERSION FIX -->
-<script data-version="3">
+<!-- 🚀 CACHE FIX: VERSION 4 -->
+<script data-version="4">
 
+// DOM ELEMENTS
 const audioPlayer = document.getElementById('audioPlayer');
 const searchInput = document.getElementById('searchInput');
 const songsDiv = document.getElementById('songs');
 
-// ⭐ UPDATED WORKING API ⭐
+// ⭐ NEW STABLE API ⭐
+// jio-saavn-api.vercel.app
 async function fetchSongs(query = '') {
   songsDiv.innerHTML = '<div class="spinner"></div>';
   try {
-    const response = await fetch(`https://saavn.me/search/songs?query=${encodeURIComponent(query)}`);
+    const response = await fetch(`https://jio-saavn-api.vercel.app/search?query=${encodeURIComponent(query)}`);
     const data = await response.json();
-    displaySongs(data.data.results);
+    displaySongs(data.data);  // IMPORTANT: use data.data
   } catch (e) {
     songsDiv.innerHTML = '<p class="text-red-500">Song loading failed.</p>';
   }
@@ -165,13 +167,14 @@ function displaySongs(list) {
 }
 
 function playSong(song) {
-  audioPlayer.src = song.downloadUrl[4]?.url;
+  audioPlayer.src = song.downloadUrl?.[song.downloadUrl.length - 1]?.url || '';
   audioPlayer.play();
   document.getElementById('songName').textContent = song.name;
   document.getElementById('songArtist').textContent = song.primaryArtists;
-  document.getElementById('songImage').src = song.image[1].url;
+  document.getElementById('songImage').src = song.image[1]?.url;
 }
 
+// Load Bollywood by default
 fetchSongs("bollywood");
 
 </script>
